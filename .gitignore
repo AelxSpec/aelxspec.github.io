@@ -1,0 +1,18 @@
+# Сохранения партий и сборки игрокам (могут содержать скрытые данные)
+vpi_*.json
+saves/
+
+# Файлы карт и подложек — большие, в репозиторий не кладём
+maps/
+*.png
+*.jpg
+*.jpeg
+*.webp
+
+# Локальные настройки Claude Code
+.claude/settings.local.json
+
+# Системное
+Thumbs.db
+desktop.ini
+.DS_Store
