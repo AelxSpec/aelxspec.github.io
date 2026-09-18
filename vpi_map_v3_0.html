@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>ВПИ · Штабная карта · v3.0</title>
+<title>ВПИ · Штабная карта · v3.1</title>
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><rect width='64' height='64' rx='10' fill='%231c1f26'/><rect x='3.5' y='3.5' width='57' height='57' rx='8' fill='none' stroke='%238a7340' stroke-width='2'/><path d='M32 8 L37 27 L56 32 L37 37 L32 56 L27 37 L8 32 L27 27 Z' fill='%23c9a25a'/><path d='M32 8 L37 27 L32 32 Z' fill='%23e8d9a8'/><circle cx='32' cy='32' r='8.5' fill='%2314161a' stroke='%23c9a25a' stroke-width='2'/><text x='32' y='37.5' font-family='Georgia,serif' font-size='12' font-weight='bold' text-anchor='middle' fill='%23e8d9a8'>&#x412;</text></svg>">
 <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><rect width='64' height='64' rx='10' fill='%231c1f26'/><rect x='3.5' y='3.5' width='57' height='57' rx='8' fill='none' stroke='%238a7340' stroke-width='2'/><path d='M32 8 L37 27 L56 32 L37 37 L32 56 L27 37 L8 32 L27 27 Z' fill='%23c9a25a'/><path d='M32 8 L37 27 L32 32 Z' fill='%23e8d9a8'/><circle cx='32' cy='32' r='8.5' fill='%2314161a' stroke='%23c9a25a' stroke-width='2'/><text x='32' y='37.5' font-family='Georgia,serif' font-size='12' font-weight='bold' text-anchor='middle' fill='%23e8d9a8'>&#x412;</text></svg>">
 <meta name="theme-color" content="#1c1f26">
@@ -154,6 +154,64 @@
 
   #toast{position:fixed;bottom:44px;left:50%;transform:translateX(-50%);background:var(--panel2);border:1px solid var(--brass);color:var(--ink);padding:8px 18px;border-radius:2px;z-index:200;display:none;font-size:12px}
   @media (prefers-reduced-motion:no-preference){ #toast{transition:opacity .3s} }
+
+  /* ---- v3.1: плавность, подсказки, навигация ---- */
+  button,.tool,select,input,textarea{transition:background-color .15s,border-color .15s,color .15s,box-shadow .15s,transform .12s}
+  .tool:hover{transform:translateY(-1px);box-shadow:0 3px 10px rgba(0,0,0,.35)}
+  .tool:active,button:active{transform:scale(.96)}
+  @media (prefers-reduced-motion:no-preference){
+    .modal-back{animation:fadeIn .16s ease-out}
+    .modal{animation:popIn .22s cubic-bezier(.2,.8,.3,1)}
+    #inspector:not(.hidden){animation:slideIn .22s cubic-bezier(.2,.8,.3,1)}
+  }
+  @keyframes fadeIn{from{opacity:0}to{opacity:1}}
+  @keyframes popIn{from{opacity:0;transform:translateY(8px) scale(.98)}to{opacity:1;transform:none}}
+  @keyframes slideIn{from{opacity:0;transform:translateX(14px)}to{opacity:1;transform:none}}
+  .modal.wide{width:min(940px,96vw)}
+  #tip{position:fixed;z-index:300;max-width:320px;background:rgba(16,18,22,.97);border:1px solid var(--brass-dim);color:var(--ink);
+    font-size:11px;line-height:1.5;padding:6px 9px;border-radius:4px;box-shadow:0 8px 24px rgba(0,0,0,.5);pointer-events:none;
+    opacity:0;transform:translateY(3px);transition:opacity .14s,transform .14s;left:0;top:0}
+  #tip.on{opacity:1;transform:none}
+  #tip .t-h{font-family:var(--serif);color:var(--brass);font-size:12px;margin:4px 0 2px}
+  #tip .t-h:first-child{margin-top:0}
+  #tip table{border-collapse:collapse;width:100%} #tip td{padding:0 6px 0 0;vertical-align:top} #tip td.n{text-align:right;font-variant-numeric:tabular-nums;padding:0}
+  #tip .plus{color:var(--green)} #tip .minus{color:#d98f83} #tip .dim{color:var(--ink-dim)}
+  #tip kbd{font-family:var(--mono);font-size:10px;border:1px solid var(--line);border-radius:3px;padding:0 4px;margin-left:5px;color:var(--brass)}
+  #provCard{position:absolute;top:10px;right:10px;z-index:20;min-width:190px;max-width:270px;background:rgba(20,22,26,.94);
+    border:1px solid var(--line);border-left:3px solid var(--brass);padding:8px 11px;border-radius:3px;box-shadow:0 8px 24px rgba(0,0,0,.45);
+    pointer-events:none;opacity:0;transform:translateY(-4px);transition:opacity .15s,transform .15s}
+  #provCard.on{opacity:1;transform:none}
+  #provCard h4{font-family:var(--serif);font-size:14px;margin-bottom:2px}
+  #provCard .s{color:var(--ink-dim);font-size:11px;line-height:1.55}
+  #provCard i{display:inline-block;width:9px;height:9px;margin-right:5px;border-radius:2px;vertical-align:0}
+  #navbox{position:absolute;right:12px;bottom:12px;z-index:20;display:flex;flex-direction:column;gap:4px;align-items:center}
+  #navbox button{width:34px;height:34px;padding:0;font-size:16px;background:rgba(28,31,38,.92);border-radius:4px;line-height:1}
+  #navbox .zl{font-size:10px;color:var(--ink-dim);text-align:center;background:rgba(20,22,26,.8);padding:1px 4px;border-radius:2px}
+  #minimap{position:absolute;left:12px;bottom:12px;z-index:20;border:1px solid var(--brass-dim);background:#0d0f12;
+    box-shadow:0 6px 20px rgba(0,0,0,.5);cursor:crosshair;border-radius:3px;opacity:.9;transition:opacity .15s;display:none;touch-action:none}
+  #minimap:hover{opacity:1}
+  .pool{width:100%;border-collapse:collapse;font-size:11px;margin-top:4px}
+  .pool th{color:var(--ink-dim);font-weight:normal;text-align:right;padding:3px 4px;border-bottom:1px solid var(--line);font-size:10px;text-transform:uppercase;letter-spacing:.03em;white-space:nowrap}
+  .pool th:first-child{text-align:left}
+  .pool td{padding:2px 4px;border-bottom:1px solid #2a2f38;text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+  .pool td:first-child{text-align:left;white-space:normal}
+  .pool tr[data-tipres]{cursor:help}
+  .pool tr[data-tipres]:hover td{background:#2a2f38}
+  .pool .grp td{color:var(--brass);font-family:var(--serif);text-transform:uppercase;letter-spacing:.08em;padding-top:9px;text-align:left;cursor:default;background:none !important}
+  .pool .plus{color:var(--green)} .pool .minus{color:#d98f83} .pool .dim{color:var(--ink-dim)}
+  .pool input{padding:2px 4px;text-align:right;width:64px}
+  .rowx{display:flex;gap:5px;align-items:center;margin-bottom:4px}
+  .rowx input,.rowx select{flex:1;min-width:0}
+  .rowx .q{flex:0 0 66px;text-align:right}
+  .rowx button{flex:0 0 auto;padding:3px 8px}
+  .rowx .lbl{flex:1;min-width:0;font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .rowx .io{flex:0 0 auto;font-size:10px;color:var(--ink-dim)}
+  .rcard{background:var(--panel2);border:1px solid var(--line);padding:8px 10px;margin-bottom:8px;border-radius:2px}
+  .rcard h4{font-family:var(--serif);font-size:13px;margin-bottom:6px;color:var(--ink)}
+  .rcard .cols{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  .rcard .cap{color:var(--ink-dim);font-size:10px;text-transform:uppercase;letter-spacing:.05em;margin-bottom:3px}
+  .econlog .plus{color:var(--green)} .econlog .minus{color:#d98f83}
+  #toast{box-shadow:0 8px 24px rgba(0,0,0,.45);border-radius:3px}
 </style>
 </head>
 <body>
@@ -168,19 +226,20 @@
       <option value="biome">Экосистемы</option>
     </select>
     <button id="btnUnderlay" title="Подложки режимов">🗺 Фоны</button>
-    <button id="btnLayers">Слои ▾</button>
+    <button id="btnLayers" title="Какие слои карты показывать: границы, войска, дороги, области, миникарта">Слои ▾</button>
     <div class="sep"></div>
     <button id="btnSave" title="Ctrl+S — записать в тот же файл">💾 Сохранить</button>
     <button id="btnSaveAs" title="Сохранить в новый файл">Сохранить как…</button>
     <span id="dirtyMark" style="color:var(--brass);font-size:11px;display:none">● не сохранено</span>
     <button id="btnSnapshot" title="Сохранить карту в изображение в полном разрешении">📷 Снимок</button>
-    <button id="btnExport" class="gm-only">📦 Сборка игроку</button>
-    <button id="btnWar" class="gm-only">⚔ Война</button>
-    <button id="btnTools" class="gm-only">🧰 Инструменты</button>
-    <button id="btnCountry" class="gm-only">🏛 Страна</button>
-    <button id="btnSettings" class="gm-only">⚙ Настройки</button>
+    <button id="btnEcon" title="Экономика государства: запасы, добыча, заводы, баланс за год">💰 Экономика</button>
+    <button id="btnExport" class="gm-only" title="Выгрузить персональный файл игрока — всё скрытое от него вырезано">📦 Сборка игроку</button>
+    <button id="btnWar" class="gm-only" title="Театры военных действий: баланс сил, фронт, котлы">⚔ Война</button>
+    <button id="btnTools" class="gm-only" title="Инструменты ГМа: поиск, кубик, взгляд игрока, «Прошёл год»">🧰 Инструменты</button>
+    <button id="btnCountry" class="gm-only" title="Панель страны: войска, штаты, снаряжение, сверка со стат-листом">🏛 Страна</button>
+    <button id="btnSettings" class="gm-only" title="Настройки партии: карта, государства, игроки, размеры значков">⚙ Настройки</button>
     <button id="btnReset" title="Вернуть панели, слои и масштаб в исходное состояние">⟲ Сброс</button>
-    <button id="btnHelp">? Помощь</button>
+    <button id="btnHelp" title="Справка, горячие клавиши и что нового">? Помощь</button>
     <span style="flex:1"></span>
     <span id="zoomInfo" style="color:var(--ink-dim);font-size:11px"></span>
   </div>
@@ -211,6 +270,16 @@
       <svg id="overlay2" xmlns="http://www.w3.org/2000/svg"></svg>
       </div>
       <div id="previewBar"><span id="previewWho"></span><button id="previewExit">Выйти из просмотра</button></div>
+      <div id="provCard"></div>
+      <canvas id="minimap" width="200" height="140" title="Миникарта: клик или протяжка — перейти в это место"></canvas>
+      <div id="navbox">
+        <button id="navIn" title="Приблизить (+ или колесо мыши)">+</button>
+        <button id="navOut" title="Отдалить (−)">−</button>
+        <button id="navFit" title="Показать всю карту (F)">⤢</button>
+        <button id="navSel" title="Навести на выбранный объект (Shift+F)">◎</button>
+        <button id="navMini" title="Миникарта (N)">▦</button>
+        <span class="zl" id="navZoom"></span>
+      </div>
       <div id="nomap">Карта не загружена.<br>ГМ: Настройки → «Подключить файл карты».<br>Игрок: выбери файл карты, который прислал ГМ.</div>
     </div>
 
@@ -234,18 +303,42 @@
 <script>
 "use strict";
 /* =============================================================
-   ВПИ · Штабная карта · v1.1
-   Патч: типы дивизий (+ополчение), аэродромы и узлы снабжения
-   с радиусами, подложки режимов карты, ресурсы/промышленность
-   видны только владельцу, миграция сохранений v1.0.
+   ВПИ · Штабная карта · v3.1
+   Экономика государств: добывающие точки и заводы в провинциях,
+   общий пул ресурсов в столице, модификаторы, прибавки, снабжение,
+   «Прошёл год». Плавная навигация, подсказки, карточка провинции.
    ============================================================= */
+const APP_VER="3.1", DATA_VER=6;
 
-const RESOURCES = [
-  ["iron","Железная руда"],["alumore","Алюминиевая руда"],["coal","Уголь"],
-  ["oil","Нефть"],["wood","Древесина"],
-  ["steel","Сталь"],["alum","Алюминий"],["build","Стройматериалы"],
-  ["fuel","Топливо"],["rubber","Каучук"],["tools","Станки"]
+/* экономика: ключ, название, группа (ind — промышленные, mil — военные) */
+const ECON_RES = [
+  ["iron","Железная руда","ind"],["alumore","Алюминиевая руда","ind"],["coal","Уголь","ind"],
+  ["oil","Нефть","ind"],["wood","Древесина","ind"],["rubber","Каучук","ind"],["gold","Золото","ind"],
+  ["steel","Сталь","ind"],["alum","Алюминий","ind"],["build","Стройматериалы","ind"],
+  ["fuel","Топливо","ind"],["tools","Станки","ind"],
+  ["goods1","Товары низшего класса","ind"],["goods2","Товары среднего класса","ind"],["goods3","Товары высшего класса","ind"],
+  ["rifle","Винтовки","mil"],["art","Орудия","mil"],["gear","Доп. оснащение","mil"],["truck","Машины","mil"],
+  ["tank","Танки","mil"],["expl","Взрывчатка","mil"],["ship","Корабли","mil"],["plane","Самолёты","mil"]
 ];
+const ECON_GROUPS = [["ind","Промышленные"],["mil","Военные"]];
+const resName = k => ECON_RES.find(r=>r[0]===k)?.[1]||k;
+/* что можно добывать на добывающей точке */
+const RAW_RES = ["iron","alumore","coal","oil","wood","rubber","gold"];
+/* совместимость со старым кодом и сверкой: только сырьё и полуфабрикаты */
+const RESOURCES = ECON_RES.filter(r=>r[2]==="ind"&&!/^goods/.test(r[0])).map(r=>[r[0],r[1]]);
+/* производственные цепочки по умолчанию: сколько завод потребляет и выпускает за год.
+   Это заготовка — ГМ правит цифры в «💰 Экономика → Механика заводов». */
+const DEF_RECIPES = {
+  steel:{in:{iron:2,coal:1},out:{steel:2}},      alum:{in:{alumore:2,coal:1},out:{alum:1}},
+  build:{in:{wood:1,coal:1},out:{build:2}},      refinery:{in:{oil:2},out:{fuel:2}},
+  tools:{in:{steel:1,alum:1},out:{tools:1}},     auto:{in:{steel:2,rubber:1},out:{truck:20}},
+  arms:{in:{steel:1,wood:1},out:{rifle:500}},    artf:{in:{steel:2},out:{art:20}},
+  gearf:{in:{steel:1,rubber:1},out:{gear:200}},  chem:{in:{coal:1,oil:1},out:{expl:2}},
+  shipyard:{in:{steel:4,fuel:1},out:{ship:1}},   aircraft:{in:{alum:2,steel:1,fuel:1},out:{plane:5}},
+  tankf:{in:{steel:3,rubber:1,fuel:1},out:{tank:5}},
+  cons1:{in:{wood:1},out:{goods1:2}},            cons2:{in:{steel:1,wood:1},out:{goods2:1}},
+  cons3:{in:{alum:1,tools:1},out:{goods3:1}}
+};
 const DIV_TYPES = [
   ["inf","Пехота","✕"],["mot","Мотопехота","МП"],["mil","Ополчение","ОП"],["cav","Кавалерия","／"],
   ["art","Артиллерия","•"],["tank","Танки","⬭"],["fleet","Флот","⚓"],
@@ -272,6 +365,7 @@ const FACTORIES = [
   ["chem","Химический завод","❋","взрывчатка"],
   ["shipyard","Верфь","⚓","корабли"],
   ["aircraft","Авиазавод","▲","самолёты"],
+  ["tankf","Танковый завод","▰","танки"],
   ["cons1","Фабрика товаров низшего класса","▪","товары"],
   ["cons2","Фабрика товаров среднего класса","▫","товары"],
   ["cons3","Фабрика товаров высшего класса","◇","товары"]
@@ -325,7 +419,8 @@ const ZONE_PRESETS = [
 
 let data=null, role=null, tool="select", selection=null, drawing=null, mapLoaded=false;
 let view={x:40,y:40,s:0.2};
-let layers={borders:true,cities:true,divisions:true,structures:true,deposits:true,rails:true,roads:true,zones:true,arrows:true,legend:false,labels:true,radii:false,edgeScroll:true,snap:true,autoWeld:true,countryNames:true,hideFar:true,war:true,control:true};
+const DEF_LAYERS={borders:true,cities:true,divisions:true,structures:true,deposits:true,rails:true,roads:true,zones:true,arrows:true,legend:false,labels:true,radii:false,edgeScroll:true,snap:true,autoWeld:true,countryNames:true,hideFar:true,war:true,control:true,minimap:true};
+let layers={...DEF_LAYERS};
 let railDraft=null, theatreDraft=null, roadDraft=null, zoneDraft=null, arrowDraft=null, ruler=null;
 /* качество отрисовки: во время движения жертвуем деталями, в покое возвращаем */
 let quality={simplify:false,fast:false};
@@ -353,11 +448,21 @@ const uid=()=>Math.random().toString(36).slice(2,9);
 const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 
 function newData(){
-  return {
-    meta:{name:"ВПИ", gmCode:"", lockedRole:null, mapHint:"", underlayHints:{}, iconScale:{div:100,city:100,struct:100,dep:100,rail:100,road:100}, defRadius:{supply:600,air:900}, hideDivLabels:[], version:5},
+  return migrate({
+    meta:{name:"ВПИ", gmCode:"", lockedRole:null, mapHint:"", underlayHints:{}, iconScale:{div:100,city:100,struct:100,dep:100,rail:100,road:100}, defRadius:{supply:600,air:900}, hideDivLabels:[], version:DATA_VER},
     nations:[{id:uid(),name:"Юхэйдо",color:"#b8503f"},{id:uid(),name:"Виктория",color:"#3f6db8"},{id:uid(),name:"Раймс",color:"#8a5fb0"},{id:uid(),name:"РСМ",color:"#c23b3b"}],
-    players:[], provinces:[], cities:[], divisions:[], structures:[], deposits:[], rails:[], roads:[], zones:[], arrows:[], theatres:[], templates:[], stocks:{res:{},eq:{}}, statRef:{}
-  };
+    players:[], provinces:[], cities:[], divisions:[], structures:[], deposits:[], rails:[], roads:[], zones:[], arrows:[], theatres:[], templates:[], stocks:{res:{},eq:{}}, statRef:{},
+    econ:{year:1, recipes:{}, nat:{}, log:[]}
+  });
+}
+/* старое поле «Производство ресурсов» превращается в добывающие точки */
+function legacyMines(st){
+  const out=[];
+  for(const [k,v] of Object.entries(st?.resv||{})){
+    const n=num0(v)||parseFloat(String(v).replace(",","."))||0;
+    if(n>0) out.push({id:uid(),name:String(n)===String(v).trim()?"Добыча":"Добыча ("+v+")",res:k,amt:n});
+  }
+  return out;
 }
 /* ---- миграция сохранений v1.0 → v1.1: вся старая работа остаётся ---- */
 const num0=v=>{const m=String(v??"").match(/-?\d+/);return m?parseInt(m[0]):0;};
@@ -367,21 +472,23 @@ function migrate(d){
   d.meta.iconScale = Object.assign({div:100,city:100,struct:100,dep:100,rail:100,road:100}, d.meta.iconScale||{});
   d.meta.defRadius = Object.assign({supply:600,air:900}, d.meta.defRadius||{});
   d.meta.hideDivLabels = Array.isArray(d.meta.hideDivLabels)?d.meta.hideDivLabels:[];  /* державы, чьи соединения без подписей */
-  d.meta.version = 2;
+  d.meta.version = DATA_VER;
   d.nations=d.nations||[]; d.players=d.players||[];
   d.provinces=(d.provinces||[]).map(p=>({
     id:p.id||uid(), name:p.name||"Провинция", points:p.points||[], nationId:p.nationId||null,
     vis:p.vis??"all",
     stats:{
       pop:p.stats?.pop||"",
-      resv:p.stats?.resv||{},
-      fabs:Array.isArray(p.stats?.fabs)?p.stats.fabs:[],
+      resv:{},
+      mines:Array.isArray(p.stats?.mines)?p.stats.mines.map(m=>({id:m.id||uid(),name:m.name||"",res:m.res||"coal",amt:+m.amt||0}))
+            :legacyMines(p.stats),
+      fabs:Array.isArray(p.stats?.fabs)?p.stats.fabs.filter(f=>f&&f.type).map(f=>({type:f.type,count:String(f.count??1)})):[],
       fab:p.stats?.fab||"",
       notes:(p.stats?.notes||"") + (p.stats?.res?((p.stats?.notes?"\n":"")+"Ресурсы (из старой версии):\n"+p.stats.res):"")
     },
     secret:p.secret||"", secretVis:Array.isArray(p.secretVis)?p.secretVis:[]
   }));
-  d.cities=(d.cities||[]).map(c=>({id:c.id||uid(),name:c.name||"Город",x:c.x||0,y:c.y||0,size:c.size||"city",vis:c.vis??"all"}));
+  d.cities=(d.cities||[]).map(c=>({id:c.id||uid(),name:c.name||"Город",x:c.x||0,y:c.y||0,size:c.size||"city",vis:c.vis??"all",noShot:!!c.noShot}));
   d.divisions=(d.divisions||[]).map(x=>({id:x.id||uid(),name:x.name||"Дивизия",type:x.type||"inf",x:x.x||0,y:x.y||0,
     nationId:x.nationId||null,strength:x.strength||"",training:x.training||"средняя",
     quality:x.quality||"none", eq:x.eq||{}, ships:x.ships||{}, vis:x.vis??"owner"}));
@@ -401,7 +508,7 @@ function migrate(d){
   (d.templates||[]).forEach(t=>{ if(t.limits) delete t.limits.plane; });
   d.templates=(d.templates||[]).filter(t=>t.type!=="air");
   d.deposits=(d.deposits||[]).map(x=>({id:x.id||uid(),name:x.name||"Месторождение",type:x.type||"coal",size:x.size||"mid",
-    x:x.x||0,y:x.y||0,nationId:x.nationId||null,output:x.output||"",notes:x.notes||"",vis:x.vis??"owner"}));
+    x:x.x||0,y:x.y||0,nationId:x.nationId||null,output:x.output||"",notes:x.notes||"",vis:x.vis??"owner",noShot:!!x.noShot}));
   d.rails=(d.rails||[]).map(r=>({id:r.id||uid(),name:r.name||"Ветка",nationId:r.nationId||null,pts:r.pts||[],vis:r.vis??"all"}));
   d.roads=(d.roads||[]).map(r=>({id:r.id||uid(),name:r.name||"Дорога",cls:r.cls||"road",
     color:r.color||ROAD_COLOR,nationId:r.nationId||null,pts:r.pts||[],note:r.note||"",vis:r.vis??"all"}));
@@ -420,7 +527,18 @@ function migrate(d){
   d.theatres=(d.theatres||[]).map(t=>({id:t.id||uid(),name:t.name||"Театр",points:t.points||[],
     sideA:t.sideA||[],sideB:t.sideB||[],note:t.note||"",vis:t.vis??"gm"}));
   d.structures=(d.structures||[]).map(s=>({id:s.id||uid(),name:s.name||"Постройка",type:s.type||"air",x:s.x||0,y:s.y||0,
-    nationId:s.nationId||null,radius:+s.radius||150,planes:s.planes||{},notes:s.notes||"",vis:s.vis??"all"}));
+    nationId:s.nationId||null,radius:+s.radius||150,planes:s.planes||{},notes:s.notes||"",vis:s.vis??"all",noShot:!!s.noShot}));
+  /* экономика: цепочки заводов, настройки государств, журнал лет */
+  const e=d.econ=d.econ||{};
+  e.year=+e.year||1;
+  const rc=JSON.parse(JSON.stringify(DEF_RECIPES));
+  for(const [k,r] of Object.entries(e.recipes||{})) rc[k]={in:{...(r?.in||{})},out:{...(r?.out||{})}};
+  e.recipes=rc;
+  const nat={};
+  for(const [k,v] of Object.entries(e.nat||{}))
+    nat[k]={cap:v?.cap||null,mods:v?.mods||{},need:v?.need||{},adds:Array.isArray(v?.adds)?v.adds.map(a=>({id:a.id||uid(),res:a.res||"coal",amt:+a.amt||0,note:a.note||""})):[]};
+  e.nat=nat;
+  e.log=Array.isArray(e.log)?e.log:[];
   return d;
 }
 const nation=id=>data.nations.find(n=>n.id===id);
@@ -440,6 +558,151 @@ function canSeeSecret(p){ return role.gm || (Array.isArray(p.secretVis)&&p.secre
 /* ресурсы и промышленность — автоматически только владелец страны + ГМ */
 function canSeeEconomy(p){ return role.gm || (p.nationId && p.nationId===myNation()); }
 function canMoveDivision(d){ return role.gm || d.nationId===myNation(); }
+/* пул ресурсов государства: ГМ и игрок этой державы */
+function canSeeNationEcon(nid){ return !!nid && (role.gm || nid===myNation()); }
+
+/* =============================================================
+   ЭКОНОМИКА
+   Итог за год по каждому ресурсу:
+     (добыча + выпуск заводов) × (1 + модификатор %)
+     + прибавки − потребление заводов − снабжение
+   Запасы: винтовки, орудия, доп. оснащение, танки и машины лежат
+   в снаряжении страны (их раздаёт панель «Страна»), прочее — в ресурсах.
+   ============================================================= */
+const EQ_KEYS=new Set(["rifle","art","gear","tank","truck"]);
+const rnd=v=>Math.round((+v||0)*100)/100;
+const fmtN=v=>rnd(v).toLocaleString("ru");
+const pmN=v=>(v>0?"+":v<0?"−":"")+fmtN(Math.abs(v));
+const sgnC=v=>v>0?"plus":v<0?"minus":"dim";
+function econNat(nid,create){
+  let e=data.econ.nat[nid];
+  if(!e&&create) e=data.econ.nat[nid]={cap:null,mods:{},need:{},adds:[]};
+  return e||{cap:null,mods:{},need:{},adds:[]};
+}
+const stockRaw=(nid,k)=>((EQ_KEYS.has(k)?data.stocks?.eq:data.stocks?.res)||{})[nid]?.[k]??"";
+const stockGet=(nid,k)=>num(stockRaw(nid,k));
+function stockSet(nid,k,v){
+  const box=EQ_KEYS.has(k)?"eq":"res";
+  data.stocks=data.stocks||{res:{},eq:{}}; data.stocks[box]=data.stocks[box]||{};
+  const b=data.stocks[box][nid]||(data.stocks[box][nid]={});
+  if(v===""||v==null)delete b[k]; else b[k]=String(v);
+}
+/* столица экономики: назначенная ГМом провинция → провинция со столичным городом → самая крупная */
+function econCap(nid){
+  if(!nid)return null;
+  const provs=data.provinces.filter(p=>p.nationId===nid&&p.points.length>2);
+  if(!provs.length)return null;
+  const set=data.econ.nat[nid]?.cap;
+  if(set){const p=provs.find(p=>p.id===set); if(p)return p;}
+  for(const c of data.cities){
+    if(c.size!=="capital")continue;
+    const p=provs.find(p=>{const b=pbox(p);return c.x>=b[0]&&c.x<=b[2]&&c.y>=b[1]&&c.y<=b[3]&&ptIn(p.points,c.x,c.y);});
+    if(p)return p;
+  }
+  let best=null,ba=-1;
+  for(const p of provs){const a=polyArea(p.points); if(a>ba){ba=a;best=p;}}
+  return best;
+}
+const facLabel=t=>{const f=FACTORIES.find(x=>x[0]===t);return f?f[2]+" "+f[1]:t;};
+const recipeText=t=>{
+  const r=data.econ.recipes[t]; if(!r)return "";
+  const side=o=>Object.entries(o||{}).filter(([,q])=>+q).map(([k,q])=>fmtN(q)+" "+resName(k).toLowerCase()).join(", ");
+  return (side(r.in)||"ничего")+" → "+(side(r.out)||"ничего")+" в год";
+};
+function econCalc(nid){
+  const R={};
+  const row=k=>R[k]||(R[k]={mine:0,fout:0,fin:0,mod:0,add:0,need:0,prod:0,net:0,stock:0,src:[],dst:[]});
+  for(const p of data.provinces){
+    if(p.nationId!==nid)continue;
+    for(const m of (p.stats.mines||[])){
+      const a=+m.amt||0; if(!a)continue;
+      const r=row(m.res); r.mine+=a; r.src.push(["⛏ "+(m.name||"Добыча")+" · "+p.name,a]);
+    }
+    for(const f of (p.stats.fabs||[])){
+      const n=num(f.count), rec=data.econ.recipes[f.type]; if(!n||!rec)continue;
+      const lbl=facLabel(f.type)+(n>1?" ×"+n:"")+" · "+p.name;
+      for(const [k,q] of Object.entries(rec.out||{})){ if(!+q)continue; const r=row(k); r.fout+=q*n; r.src.push([lbl,q*n]); }
+      for(const [k,q] of Object.entries(rec.in||{})){ if(!+q)continue; const r=row(k); r.fin+=q*n; r.dst.push([lbl,q*n]); }
+    }
+  }
+  /* месторождения на карте тоже дают добычу, если ГМ не спрятал их от всех */
+  for(const dp of (data.deposits||[])){
+    if(dp.nationId!==nid||dp.vis==="gm"||!RAW_RES.includes(dp.type))continue;
+    const a=num(dp.output); if(!a)continue;
+    const r=row(dp.type); r.mine+=a; r.src.push(["◆ Месторождение "+dp.name,a]);
+  }
+  const e=econNat(nid);
+  for(const [k,v] of Object.entries(e.mods||{})) if(num(v)) row(k).mod=num(v);
+  for(const a of (e.adds||[])){
+    const v=+a.amt||0; if(!v)continue;
+    const r=row(a.res); r.add+=v; (v>0?r.src:r.dst).push(["⇄ "+(a.note||"Прибавка"),Math.abs(v)]);
+  }
+  for(const [k,v] of Object.entries(e.need||{})) if(num(v)){ const r=row(k); r.need=num(v); r.dst.push(["⚑ Снабжение",r.need]); }
+  for(const [k] of ECON_RES) if(stockGet(nid,k)) row(k);
+  for(const k in R){
+    const r=R[k];
+    r.stock=stockGet(nid,k);
+    r.prod=(r.mine+r.fout)*(1+r.mod/100);
+    r.net=rnd(r.prod+r.add-r.fin-r.need);
+  }
+  return R;
+}
+/* подсказка по ресурсу: откуда приходит, куда уходит, как считается */
+function resTipHtml(nid,k){
+  if(!data||!canSeeNationEcon(nid))return "";
+  const r=econCalc(nid)[k]; if(!r)return "";
+  const li=(arr,cls)=>arr.slice(0,10).map(([l,v])=>`<tr><td>${esc(l)}</td><td class="n ${cls}">${cls==="plus"?"+":"−"}${fmtN(v)}</td></tr>`).join("")
+    +(arr.length>10?`<tr><td class="dim">…и ещё ${arr.length-10}</td><td></td></tr>`:"");
+  const parts=[`добыча ${fmtN(r.mine)}`,`заводы ${fmtN(r.fout)}`];
+  return `<div class="t-h">${esc(resName(k))}</div>
+    <div class="t-h">Откуда приходит</div>${r.src.length?`<table>${li(r.src,"plus")}</table>`:'<div class="dim">ниоткуда</div>'}
+    <div class="t-h">Куда уходит</div>${r.dst.length?`<table>${li(r.dst,"minus")}</table>`:'<div class="dim">никуда</div>'}
+    <div class="t-h">Баланс за год</div>
+    <div>(${parts.join(" + ")})${r.mod?` × ${rnd(1+r.mod/100)} <span class="dim">(модификатор ${pmN(r.mod)}%)</span>`:""}
+      ${r.add?` ${r.add>0?"+":"−"} прибавки ${fmtN(Math.abs(r.add))}`:""} − потребление ${fmtN(r.fin)} − снабжение ${fmtN(r.need)}
+      = <b class="${sgnC(r.net)}">${pmN(r.net)||"0"}</b></div>
+    <div class="dim">Запас ${fmtN(r.stock)} → через год ${fmtN(Math.max(0,r.stock+r.net))}${r.stock+r.net<0?` <span class="minus">(нехватка ${fmtN(-(r.stock+r.net))})</span>`:""}</div>`;
+}
+/* таблица пула: компактная (карточка провинции) или полная (окно экономики, edit — поля ГМа) */
+function poolTable(nid,opt={}){
+  const R=econCalc(nid), ed=!!opt.edit, full=!!opt.full, e=econNat(nid);
+  const show=k=>{const r=R[k]; return opt.all||(r&&(r.stock||r.net||r.prod||r.fin||r.need||r.add||r.mod));};
+  const cols=full?10:4;
+  let h=`<table class="pool"><tr><th>Ресурс</th><th>Запас</th>`+
+    (full?`<th>Добыча</th><th>Заводы +</th><th>Заводы −</th><th>Мод. %</th><th>Прибавки</th>`:"")+
+    `<th>Снабж.</th><th>Итог/год</th>`+(full?`<th>Через год</th>`:"")+`</tr>`;
+  let any=false;
+  for(const [g,gn] of ECON_GROUPS){
+    const ks=ECON_RES.filter(r=>r[2]===g&&show(r[0]));
+    if(!ks.length)continue; any=true;
+    h+=`<tr class="grp"><td colspan="${cols}">${gn}</td></tr>`;
+    for(const [k,n] of ks){
+      const r=R[k]||{stock:0,mine:0,fout:0,fin:0,mod:0,add:0,need:0,net:0};
+      h+=`<tr data-tipres="${nid}|${k}" data-k="${k}"><td>${n}</td>`+
+        `<td>${ed?`<input data-est="${k}" value="${esc(stockRaw(nid,k))}" placeholder="0">`:fmtN(r.stock)}</td>`+
+        (full?`<td data-c="mine">${r.mine?fmtN(r.mine):"—"}</td><td data-c="fout" class="plus">${r.fout?"+"+fmtN(r.fout):"—"}</td>`+
+          `<td data-c="fin" class="minus">${r.fin?"−"+fmtN(r.fin):"—"}</td>`+
+          `<td>${ed?`<input data-emod="${k}" value="${esc(e.mods?.[k]??"")}" placeholder="0">`:(r.mod?pmN(r.mod)+"%":"—")}</td>`+
+          `<td data-c="add" class="${sgnC(r.add)}">${r.add?pmN(r.add):"—"}</td>`:"")+
+        `<td>${ed?`<input data-eneed="${k}" value="${esc(e.need?.[k]??"")}" placeholder="0">`:(r.need?fmtN(r.need):"—")}</td>`+
+        `<td data-c="net" class="${sgnC(r.net)}">${pmN(r.net)||"0"}</td>`+
+        (full?`<td data-c="next" class="${r.stock+r.net<0?"minus":""}">${fmtN(Math.max(0,r.stock+r.net))}</td>`:"")+`</tr>`;
+    }
+  }
+  if(!any) return '<div class="hint">Ресурсов пока нет: добывающие точки и заводы ставятся в провинциях государства, запасы вписывает ГМ.</div>';
+  return h+"</table>";
+}
+/* живое обновление вычисляемых ячеек без перерисовки полей ввода */
+function refreshPool(box,nid){
+  const R=econCalc(nid);
+  box.querySelectorAll("tr[data-k]").forEach(tr=>{
+    const r=R[tr.dataset.k]||{mine:0,fout:0,fin:0,add:0,net:0,stock:0};
+    const set=(c,t,cls)=>{const td=tr.querySelector(`[data-c="${c}"]`); if(td){td.textContent=t; if(cls!==undefined)td.className=cls;}};
+    set("mine",r.mine?fmtN(r.mine):"—"); set("fout",r.fout?"+"+fmtN(r.fout):"—"); set("fin",r.fin?"−"+fmtN(r.fin):"—");
+    set("add",r.add?pmN(r.add):"—",sgnC(r.add)); set("net",pmN(r.net)||"0",sgnC(r.net));
+    set("next",fmtN(Math.max(0,r.stock+r.net)),r.stock+r.net<0?"minus":"");
+  });
+}
 
 /* =============================================================
    ВЬЮПОРТ
@@ -454,7 +717,9 @@ function applyView(){
   for(const el of world.querySelectorAll("img")){
     el.classList.toggle("crisp",crisp); el.classList.toggle("smooth",!crisp);
   }
-  $("#zoomInfo").textContent=mapLoaded?`масштаб ${(view.s*100).toFixed(0)}%`:"";
+  const zt=mapLoaded?`${(view.s*100).toFixed(0)}%`:"";
+  $("#zoomInfo").textContent=zt?"масштаб "+zt:""; $("#navZoom").textContent=zt;
+  drawMini();
 }
 /* при панораме подрисовываем только когда ушли далеко за поле запаса */
 let _panAnchor=null,_panT=0;
@@ -479,41 +744,62 @@ function toWorld(cx,cy){
   const r=vp.getBoundingClientRect();
   return [(cx-r.left-view.x)/view.s,(cy-r.top-view.y)/view.s];
 }
+/* колесо и щипок на тачпаде: цель масштаба копится, карта плавно доезжает до неё */
 vp.addEventListener("wheel",e=>{
   if(!mapLoaded)return;
   e.preventDefault();
-  const [wx,wy]=toWorld(e.clientX,e.clientY);
-  const k=e.deltaY<0?1.15:1/1.15;
-  view.s=Math.min(8,Math.max(0.02,view.s*k));
   const r=vp.getBoundingClientRect();
-  view.x=e.clientX-r.left-wx*view.s;
-  view.y=e.clientY-r.top-wy*view.s;
-  applyView(); setMoving(true);
-  scheduleZoomRedraw();
+  let dy=e.deltaY*(e.deltaMode===1?33:e.deltaMode===2?r.height:1);
+  if(e.ctrlKey)dy*=2.5;
+  const k=Math.exp(-Math.max(-300,Math.min(300,dy))*0.0022);
+  zoomBy(k,e.clientX-r.left,e.clientY-r.top);
 },{passive:false});
 
 let panState=null,dragEnt=null,dragVertex=null,moved=false,_coordT=0,_cx=0,_cy=0;
+let spaceDown=false;
+const touches=new Map(); let pinch=null;
+function startPan(e){
+  setHover(null);
+  panState={sx:e.clientX,sy:e.clientY,vx:view.x,vy:view.y,target:e.target};
+  zAnim=null; fly=null;
+  vp.classList.add("panning");
+  vp.setPointerCapture(e.pointerId);
+}
 vp.addEventListener("pointerdown",e=>{
-  if(!mapLoaded)return;
+  if(!mapLoaded||!data||!role)return;
+  if(e.target.closest&&e.target.closest("#navbox,#minimap,#previewBar"))return;
   moved=false;
   const t=e.target;
+  /* два пальца — щипок: масштаб вокруг середины между ними */
+  if(e.pointerType==="touch"){
+    touches.set(e.pointerId,[e.clientX,e.clientY]);
+    if(touches.size===2){
+      panState=null; dragEnt=null; vp.classList.remove("panning");
+      const [a,b]=[...touches.values()];
+      pinch={d:Math.hypot(a[0]-b[0],a[1]-b[1])||1,s:view.s,m:toWorld((a[0]+b[0])/2,(a[1]+b[1])/2)};
+      vp.setPointerCapture(e.pointerId); return;
+    }
+  }
+  /* пробел или средняя кнопка — всегда панорама, при любом инструменте */
+  if(spaceDown||e.button===1){e.preventDefault();startPan(e);return;}
   if(t.dataset&&t.dataset.vertex!==undefined&&role.gm){
+    snapshot(true);
     dragVertex={idx:+t.dataset.vertex}; vp.setPointerCapture(e.pointerId); return;
   }
   const gDiv=t.closest?t.closest("[data-kind='division']"):null;
   if(gDiv&&tool==="select"){
     const d=data.divisions.find(x=>x.id===gDiv.dataset.id);
-    if(d&&canMoveDivision(d)){dragEnt=d;select("division",d.id);vp.setPointerCapture(e.pointerId);return;}
+    if(d&&canMoveDivision(d)){snapshot(true);dragEnt=d;select("division",d.id);vp.setPointerCapture(e.pointerId);return;}
   }
   const gDep=t.closest?t.closest("[data-kind='deposit']"):null;
   if(gDep&&tool==="select"&&role.gm){
     const dp=data.deposits.find(x=>x.id===gDep.dataset.id);
-    if(dp){dragEnt=dp;select("deposit",dp.id);vp.setPointerCapture(e.pointerId);return;}
+    if(dp){snapshot(true);dragEnt=dp;select("deposit",dp.id);vp.setPointerCapture(e.pointerId);return;}
   }
   const gStr=t.closest?t.closest("[data-kind='structure']"):null;
   if(gStr&&tool==="select"&&role.gm){
     const s=data.structures.find(x=>x.id===gStr.dataset.id);
-    if(s){dragEnt=s;select("structure",s.id);vp.setPointerCapture(e.pointerId);return;}
+    if(s){snapshot(true);dragEnt=s;select("structure",s.id);vp.setPointerCapture(e.pointerId);return;}
   }
   if(tool==="province"&&role.gm&&e.button===0){
     const [x,y]=toWorld(e.clientX,e.clientY);
@@ -524,18 +810,18 @@ vp.addEventListener("pointerdown",e=>{
   if(tool==="city"&&role.gm&&e.button===0){
     const [x,y]=toWorld(e.clientX,e.clientY);
     const c={id:uid(),name:"Новый город",x:Math.round(x),y:Math.round(y),size:"city",vis:"all"};
-    snapshot(); markDirty(); data.cities.push(c); setTool("select"); select("city",c.id); return;
+    snapshot(true); markDirty(); data.cities.push(c); setTool("select"); select("city",c.id); return;
   }
   if(tool==="division"&&role.gm&&e.button===0){
     const [x,y]=toWorld(e.clientX,e.clientY);
     const d={id:uid(),name:"1-я дивизия",type:"inf",x:Math.round(x),y:Math.round(y),nationId:data.nations[0]?.id||null,strength:"",training:"средняя",quality:"none",eq:{},vis:"owner"};
-    snapshot(); markDirty(); data.divisions.push(d); setTool("select"); select("division",d.id); return;
+    snapshot(true); markDirty(); data.divisions.push(d); bumpWar(); setTool("select"); select("division",d.id); return;
   }
   if(tool==="deposit"&&role.gm&&e.button===0){
     const [x,y]=toWorld(e.clientX,e.clientY);
     const dp={id:uid(),name:"Новое месторождение",type:"coal",size:"mid",x:Math.round(x),y:Math.round(y),
       nationId:provinceAt(x,y)?.nationId||null,output:"",notes:"",vis:"owner"};
-    snapshot(); markDirty(); data.deposits.push(dp); setTool("select"); select("deposit",dp.id); return;
+    snapshot(true); markDirty(); data.deposits.push(dp); setTool("select"); select("deposit",dp.id); return;
   }
   if(tool==="theatre"&&role.gm&&e.button===0){
     const [x,y]=toWorld(e.clientX,e.clientY);
@@ -581,19 +867,25 @@ vp.addEventListener("pointerdown",e=>{
     const [x,y]=toWorld(e.clientX,e.clientY);
     const s={id:uid(),name:"Аэродром",type:"air",x:Math.round(x),y:Math.round(y),nationId:data.nations[0]?.id||null,
       radius:(data.meta.defRadius?.air||150),planes:{},notes:"",vis:"all"};
-    snapshot(); markDirty(); data.structures.push(s); setTool("select"); select("structure",s.id); return;
+    snapshot(true); markDirty(); data.structures.push(s); setTool("select"); select("structure",s.id); return;
   }
   if(e.shiftKey&&role.gm&&tool==="select"){
     const [x,y]=toWorld(e.clientX,e.clientY);
     band={x0:x,y0:y,x1:x,y1:y}; vp.setPointerCapture(e.pointerId); return;
   }
-  panState={sx:e.clientX,sy:e.clientY,vx:view.x,vy:view.y,target:t};
-  vp.classList.add("panning");
-  vp.setPointerCapture(e.pointerId);
+  startPan(e);
 });
 vp.addEventListener("pointermove",e=>{
-  if(!mapLoaded)return;
+  if(!mapLoaded||!data)return;
+  if(e.pointerType==="touch"&&touches.has(e.pointerId))touches.set(e.pointerId,[e.clientX,e.clientY]);
+  if(pinch&&touches.size>=2){
+    const [a,b]=[...touches.values()], r=vp.getBoundingClientRect();
+    view.s=clampS(pinch.s*Math.hypot(a[0]-b[0],a[1]-b[1])/pinch.d);
+    view.x=(a[0]+b[0])/2-r.left-pinch.m[0]*view.s; view.y=(a[1]+b[1])/2-r.top-pinch.m[1]*view.s;
+    applyView(); setMoving(true); scheduleZoomRedraw(); return;
+  }
   const [wx,wy]=toWorld(e.clientX,e.clientY);
+  if(!panState&&!dragEnt&&!dragVertex&&!band)queueHover(wx,wy,e.target);
   if(!_coordT){_coordT=setTimeout(()=>{_coordT=0;$("#stCoords").textContent=`x:${_cx} y:${_cy}`;},80);}
   _cx=wx.toFixed(0); _cy=wy.toFixed(0);
   if(dragVertex&&selection?.kind==="province"){
@@ -612,7 +904,10 @@ vp.addEventListener("pointermove",e=>{
     schedulePanRedraw();
   }
 });
+function endTouch(e){ touches.delete(e.pointerId); if(touches.size<2)pinch=null; }
+vp.addEventListener("pointercancel",e=>{endTouch(e); if(panState){panState=null;vp.classList.remove("panning");}});
 vp.addEventListener("pointerup",e=>{
+  endTouch(e);
   if(band){
     const b2=band; band=null;
     const small=Math.abs(b2.x1-b2.x0)+Math.abs(b2.y1-b2.y0) < 6;
@@ -622,7 +917,7 @@ vp.addEventListener("pointerup",e=>{
     return;
   }
   if(dragVertex){
-    dragVertex=null;
+    dragVertex=null; markDirty();
     if(selection?.kind==="province"&&layers.autoWeld)weldBorders(selection.id);
     bumpBorders();render();return;
   }
@@ -646,12 +941,17 @@ vp.addEventListener("contextmenu",e=>{
   e.preventDefault();
   if(e.target.dataset&&e.target.dataset.vertex!==undefined&&role.gm&&selection?.kind==="province"){
     const p=data.provinces.find(x=>x.id===selection.id);
-    if(p&&p.points.length>3){p.points.splice(+e.target.dataset.vertex,1);bumpBorders();render();}
+    if(p&&p.points.length>3){snapshot(true);markDirty();p.points.splice(+e.target.dataset.vertex,1);bumpBorders();render();}
   }
 },{capture:true});
 vp.addEventListener("dragstart",e=>e.preventDefault());
 vp.addEventListener("selectstart",e=>e.preventDefault());
-vp.addEventListener("dblclick",()=>{if(tool==="province")finishProvince();if(tool==="rail")finishRail();if(tool==="theatre")finishTheatre();if(tool==="road")finishRoad();if(tool==="zone")finishZone();if(tool==="arrow")finishArrow();});
+vp.addEventListener("dblclick",e=>{
+  /* двойной клик по пустой карте — приблизить к точке (Shift — отдалить) */
+  if(tool==="select"&&mapLoaded&&!(e.target.closest&&e.target.closest("[data-kind],#navbox,#minimap"))){
+    const r=vp.getBoundingClientRect(); zoomBy(e.shiftKey?0.5:2,e.clientX-r.left,e.clientY-r.top); return;
+  }
+  if(tool==="province")finishProvince();if(tool==="rail")finishRail();if(tool==="theatre")finishTheatre();if(tool==="road")finishRoad();if(tool==="zone")finishZone();if(tool==="arrow")finishArrow();});
 
 /* наведение на постройку → показать радиус */
 svg.addEventListener("pointerover",e=>{
@@ -677,23 +977,103 @@ function updateEdge(e){
 document.addEventListener("pointermove",updateEdge);
 vp.addEventListener("pointerleave",()=>{edgeVec.x=edgeVec.y=0;});
 let _lastT=0;
+const keysDown=new Set();
 function edgeLoop(t){
   const dt=Math.min(50,t-_lastT||16); _lastT=t;
   if((edgeVec.x||edgeVec.y)&&!panState&&!$("#modals").firstElementChild){
     view.x+=edgeVec.x*dt; view.y+=edgeVec.y*dt; applyView(); schedulePanRedraw();
   }
+  /* стрелки: плавная прокрутка, пока клавиша зажата; Shift — быстрее */
+  if(keysDown.size&&mapLoaded){
+    const v=(keysDown.has("Shift")?1.6:0.7)*dt;
+    const kx=(keysDown.has("ArrowLeft")?1:0)-(keysDown.has("ArrowRight")?1:0);
+    const ky=(keysDown.has("ArrowUp")?1:0)-(keysDown.has("ArrowDown")?1:0);
+    if(kx||ky){fly=null;view.x+=kx*v;view.y+=ky*v;applyView();setMoving(true);schedulePanRedraw();}
+  }
+  if(zAnim&&mapLoaded){
+    let ns=view.s*Math.pow(zAnim.s/view.s,Math.min(1,dt/65));
+    if(Math.abs(Math.log(zAnim.s/ns))<0.004)ns=zAnim.s;
+    view.s=ns; view.x=zAnim.cx-zAnim.w[0]*ns; view.y=zAnim.cy-zAnim.w[1]*ns;
+    applyView(); setMoving(true); scheduleZoomRedraw();
+    if(ns===zAnim.s)zAnim=null;
+  }
+  if(fly&&mapLoaded){
+    const r=vp.getBoundingClientRect();
+    const k=Math.min(1,(t-fly.t0)/fly.dur), q=k<.5?4*k*k*k:1-Math.pow(-2*k+2,3)/2;
+    const s=Math.exp(Math.log(fly.s0)+(Math.log(fly.s1)-Math.log(fly.s0))*q);
+    const cx=fly.c0[0]+(fly.c1[0]-fly.c0[0])*q, cy=fly.c0[1]+(fly.c1[1]-fly.c0[1])*q;
+    view.s=s; view.x=r.width/2-cx*s; view.y=r.height/2-cy*s;
+    applyView(); setMoving(true);
+    if(k>=1){fly=null;render();} else scheduleZoomRedraw();
+  }
   requestAnimationFrame(edgeLoop);
+}
+/* ---- плавное приближение и перелёты ---- */
+let zAnim=null, fly=null;
+const clampS=s=>Math.min(8,Math.max(0.02,s));
+function zoomBy(k,cx,cy){
+  if(!mapLoaded)return;
+  const r=vp.getBoundingClientRect();
+  if(cx==null){cx=r.width/2;cy=r.height/2;}
+  fly=null;
+  const s0=zAnim?zAnim.s:view.s;
+  zAnim={s:clampS(s0*k),cx,cy,w:[(cx-view.x)/view.s,(cy-view.y)/view.s]};
+}
+function flyTo(x,y,s,dur){
+  if(!mapLoaded)return;
+  const r=vp.getBoundingClientRect();
+  zAnim=null; s=clampS(s||view.s);
+  if(matchMedia("(prefers-reduced-motion: reduce)").matches)dur=0;
+  if(dur===0){view.s=s;view.x=r.width/2-x*s;view.y=r.height/2-y*s;fly=null;applyView();render();return;}
+  fly={t0:performance.now(),dur:dur||420,c0:[(r.width/2-view.x)/view.s,(r.height/2-view.y)/view.s],s0:view.s,c1:[x,y],s1:s};
+}
+function flyToBox(b,pad){
+  const r=vp.getBoundingClientRect();
+  const s=Math.min(r.width/Math.max(1,b[2]-b[0]),r.height/Math.max(1,b[3]-b[1]))*(pad||0.8);
+  flyTo((b[0]+b[2])/2,(b[1]+b[3])/2,s);
+}
+/* навести камеру на выбранный объект */
+function focusSelection(){
+  if(!selection||!data)return false;
+  const s=selection, L={province:"provinces",zone:"zones",theatre:"theatres",road:"roads",arrow:"arrows",rail:"rails",
+    city:"cities",division:"divisions",structure:"structures",deposit:"deposits"}[s.kind];
+  const o=L&&(data[L]||[]).find(x=>x.id===s.id); if(!o)return false;
+  let pts=o.points||o.pts;
+  if(s.kind==="rail")pts=o.pts.map(railPoint).filter(Boolean);
+  if(pts&&pts.length){ const b=bboxOf(pts); if(b[2]-b[0]<30&&b[3]-b[1]<30)flyTo((b[0]+b[2])/2,(b[1]+b[3])/2,Math.max(view.s,0.8)); else flyToBox(b,0.7); }
+  else flyTo(o.x,o.y,Math.max(view.s,0.8));
+  return true;
 }
 requestAnimationFrame(edgeLoop);
 
+document.addEventListener("keyup",e=>{
+  keysDown.delete(e.key);
+  if(e.key==="Shift")keysDown.delete("Shift");
+  if(e.code==="Space"){spaceDown=false;vp.classList.remove("panning");}
+});
+window.addEventListener("blur",()=>{keysDown.clear();spaceDown=false;});
 document.addEventListener("keydown",e=>{
-  if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==="s"){e.preventDefault();saveNow(false);return;}
-  if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==="z"&&!e.shiftKey){e.preventDefault();restore(undoStack,redoStack);return;}
-  if((e.ctrlKey||e.metaKey)&&(e.key.toLowerCase()==="y"||(e.key.toLowerCase()==="z"&&e.shiftKey))){e.preventDefault();restore(redoStack,undoStack);return;}
-  if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==="f"){e.preventDefault();if(role?.gm)openSearch();return;}
-  if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==="d"){e.preventDefault();duplicateSelected();return;}
-  if(e.target.matches("input,textarea,select"))return;
-  if(e.key==="Escape"){if(drawing){drawing=null;}if(railDraft){railDraft=null;}if(theatreDraft){theatreDraft=null;}if(roadDraft){roadDraft=null;}if(zoneDraft){zoneDraft=null;}if(arrowDraft){arrowDraft=null;}ruler=null;render();setTool("select");closeInspector();}
+  if(!data||!role)return;                       /* до входа горячие клавиши молчат */
+  const mod=e.ctrlKey||e.metaKey, key=e.key.toLowerCase();
+  const typing=e.target.matches&&e.target.matches("input,textarea,select,[contenteditable]");
+  if(mod&&key==="s"){e.preventDefault();saveNow(false);return;}
+  if(mod&&key==="f"){e.preventDefault();openSearch();return;}
+  if(typing)return;                              /* в полях ввода Ctrl+Z и прочее работают как обычно */
+  /* открыто окно: Esc его закрывает, остальное не трогает карту */
+  if($("#modals").lastElementChild){ if(e.key==="Escape")closeModal(); return; }
+  if(mod&&key==="z"&&!e.shiftKey){e.preventDefault();restore(undoStack,redoStack);return;}
+  if(mod&&(key==="y"||(key==="z"&&e.shiftKey))){e.preventDefault();restore(redoStack,undoStack);return;}
+  if(mod&&key==="d"){e.preventDefault();duplicateSelected();return;}
+  if(mod||e.altKey)return;                       /* Ctrl+C, Ctrl+V и прочее не переключают инструменты */
+  if(e.key.startsWith("Arrow")){e.preventDefault();keysDown.add(e.key);if(e.shiftKey)keysDown.add("Shift");return;}
+  if(e.code==="Space"){e.preventDefault();if(!spaceDown){spaceDown=true;vp.classList.add("panning");}return;}
+  if(e.key==="+"||e.key==="="||e.code==="NumpadAdd"){zoomBy(1.5);return;}
+  if(e.key==="-"||e.key==="_"||e.code==="NumpadSubtract"){zoomBy(1/1.5);return;}
+  if(e.code==="KeyN"){layers.minimap=!layers.minimap;showMini();return;}
+  if(e.code==="KeyF"&&e.shiftKey){focusSelection();return;}
+  if(e.key==="Escape"){drawing=null;railDraft=null;theatreDraft=null;roadDraft=null;zoneDraft=null;arrowDraft=null;
+    window.__redrawTarget=window.__zoneTarget=window.__theatreTarget=window.__extend=null;
+    ruler=null;render();setTool("select");closeInspector();}
   if(e.key==="Enter"&&drawing)finishProvince();
   if(e.key==="Enter"&&railDraft)finishRail();
   if(e.key==="Enter"&&theatreDraft)finishTheatre();
@@ -720,13 +1100,13 @@ document.addEventListener("keydown",e=>{
   if(e.code==="KeyB"&&role.gm)setTool("band");
   if(e.code==="KeyZ"&&role.gm)setTool("zone");
   if(e.code==="KeyL")setTool("ruler");
-  if(e.code==="KeyF")zoomFit();
+  if(e.code==="KeyF")zoomFit(true);
 });
 
 function finishProvince(){
   if(window.__redrawTarget&&drawing&&drawing.length>=3){
     const p=data.provinces.find(x=>x.id===window.__redrawTarget);
-    if(p)p.points=drawing.slice();
+    if(p){snapshot(true);markDirty();p.points=drawing.slice();}
     const tid=window.__redrawTarget;
     drawing=null;window.__redrawTarget=null;
     if(layers.autoWeld&&tid)weldBorders(tid);
@@ -735,15 +1115,17 @@ function finishProvince(){
   if(!drawing||drawing.length<3){drawing=null;render();return;}
   const p={id:uid(),name:"Новая провинция",points:drawing.slice(),nationId:null,
     vis:"all",stats:{pop:"",resv:{},fabs:[],fab:"",notes:""},secret:"",secretVis:[]};
-  snapshot(); markDirty();
+  snapshot(true); markDirty();
   data.provinces.push(p);drawing=null;
   if(layers.autoWeld){const r=weldBorders(p.id); if(r.moved||r.added)toast(`Границы сшиты: узлов притянуто ${r.moved}, добавлено ${r.added}`);}
   bumpBorders(); setTool("select"); select("province",p.id);
 }
-function zoomFit(){
+function zoomFit(smooth){
   if(!mapLoaded)return;
   const r=vp.getBoundingClientRect();
   const s=Math.min(r.width/img.naturalWidth,r.height/img.naturalHeight)*0.97;
+  if(smooth===true){flyTo(img.naturalWidth/2,img.naturalHeight/2,s);return;}
+  zAnim=null; fly=null;
   view.s=s;view.x=(r.width-img.naturalWidth*s)/2;view.y=(r.height-img.naturalHeight*s)/2;
   applyView();render();
 }
@@ -766,12 +1148,10 @@ function divCap(d,key){
   return v>0?v:0;
 }
 const capText = c => c===null ? "/ —" : (c>0 ? "/ "+c : "/ нет");
-const provSum = (nid,key) => data.provinces.filter(p=>p.nationId===nid).reduce((a,p)=>a+num(p.stats.resv?.[key]),0);
+
 const divSum  = (nid,key) => data.divisions.filter(d=>d.nationId===nid).reduce((a,d)=>a+num(d.eq?.[key]),0);
 const limSum  = (nid,key) => data.divisions.filter(d=>d.nationId===nid).reduce((a,d)=>a+(divCap(d,key)||0),0);
-function resLines(p){
-  return RESOURCES.filter(r=>(p.stats.resv||{})[r[0]]).map(r=>[r[1],p.stats.resv[r[0]]]);
-}
+
 /* ---- железные дороги: узлы, прилипание, завершение ---- */
 function railSnap(x,y,target){
   const g = target&&target.closest ? target.closest("[data-kind='city'],[data-kind='structure']") : null;
@@ -801,28 +1181,29 @@ function roadSnap(x,y){
   for(const st of data.structures){const d=Math.hypot(st.x-x,st.y-y); if(d<bd){bd=d;best=[st.x,st.y];}}
   return best||[Math.round(x),Math.round(y)];
 }
+/* «Продолжить»: исходный объект не удаляется, пока набросок не завершён — Esc ничего не теряет */
+function takeExtend(kind){
+  const x=window.__extend; window.__extend=null;
+  if(!x||x.kind!==kind)return null;
+  return ({rail:data.rails,road:data.roads,arrow:data.arrows}[kind]||[]).find(o=>o.id===x.id)||null;
+}
 function finishArrow(){
+  const ext=takeExtend("arrow");
   if(!arrowDraft||arrowDraft.length<2){arrowDraft=null;render();return;}
-  const k=window.__arrKeep||{};
-  const a={id:uid(),name:k.name||"",pts:arrowDraft.slice(),
-    color:(window.__arrColor||"#c9a25a"),width:k.width??100,style:k.style||"solid",
-    head:k.head||"end",curve:k.curve!==false,showLabel:k.showLabel!==false,
-    labelSize:k.labelSize??100,nationId:k.nationId||null,note:k.note||"",
-    vis:k.vis||"all",noShot:!!k.noShot};
-  window.__arrColor=undefined; window.__arrKeep=undefined;
-  snapshot(true); markDirty(); data.arrows.push(a); arrowDraft=null;
+  snapshot(true); markDirty();
+  if(ext){ext.pts=arrowDraft.slice();arrowDraft=null;setTool("select");select("arrow",ext.id);return;}
+  const a={id:uid(),name:"",pts:arrowDraft.slice(),color:"#c9a25a",width:100,style:"solid",
+    head:"end",curve:true,showLabel:true,labelSize:100,nationId:null,note:"",vis:"all",noShot:false};
+  data.arrows.push(a); arrowDraft=null;
   setTool("select"); select("arrow",a.id);
 }
 function finishRoad(){
+  const ext=takeExtend("road");
   if(!roadDraft||roadDraft.length<2){roadDraft=null;render();return;}
-  const r={id:uid(),
-    name:(window.__roadName!==undefined?window.__roadName:"Дорога"),
-    cls:(window.__roadCls!==undefined?window.__roadCls:"road"),
-    color:(window.__roadColor!==undefined?window.__roadColor:ROAD_COLOR),
-    nationId:(window.__roadNation!==undefined?window.__roadNation:null),
-    pts:roadDraft.slice(), note:"", vis:(window.__roadVis!==undefined?window.__roadVis:"all")};
-  window.__roadName=window.__roadCls=window.__roadColor=window.__roadNation=window.__roadVis=undefined;
-  snapshot(true); markDirty(); data.roads.push(r); roadDraft=null;
+  snapshot(true); markDirty();
+  if(ext){ext.pts=roadDraft.slice();roadDraft=null;setTool("select");select("road",ext.id);return;}
+  const r={id:uid(),name:"Дорога",cls:"road",color:ROAD_COLOR,nationId:null,pts:roadDraft.slice(),note:"",vis:"all"};
+  data.roads.push(r); roadDraft=null;
   setTool("select"); select("road",r.id);
 }
 function finishZone(){
@@ -852,11 +1233,11 @@ function finishTheatre(){
   setTool("select"); select("theatre",t.id);
 }
 function finishRail(){
+  const ext=takeExtend("rail");
   if(!railDraft||railDraft.length<2){railDraft=null;render();return;}
-  const r={id:uid(),name:window.__railName||"Ветка",
-    nationId:(window.__railNation!==undefined?window.__railNation:(data.nations[0]?.id||null)),
-    pts:railDraft.slice(), vis:window.__railVis||"all"};
-  window.__railName=undefined; window.__railNation=undefined; window.__railVis=undefined;
+  snapshot(true); markDirty();
+  if(ext){ext.pts=railDraft.slice();railDraft=null;setTool("select");select("rail",ext.id);return;}
+  const r={id:uid(),name:"Ветка",nationId:data.nations[0]?.id||null,pts:railDraft.slice(),vis:"all"};
   data.rails.push(r); railDraft=null; setTool("select"); select("rail",r.id);
 }
 /* ---- сшивка границ: притягивание вершин и вставка узлов на стыках ---- */
@@ -1294,6 +1675,16 @@ function drawBase(){
     </g>`;
   }
 
+  /* ---- столица экономики: значок пула ресурсов, видят ГМ и владелец ---- */
+  if(layers.borders&&marks&&!_shotOn)for(const n of data.nations){
+    if(!canSeeNationEcon(n.id))continue;
+    const p=econCap(n.id); if(!p)continue;
+    const c=centroid(p.points); if(!inView(c[0],c[1],VB))continue;
+    const R=Uc*0.62;
+    out+=`<g data-kind="province" data-id="${p.id}" data-tip="Столица экономики «${esc(n.name)}»: здесь собран пул ресурсов государства" style="cursor:pointer">
+      <rect x="${c[0]-R}" y="${c[1]-R}" width="${R*2}" height="${R*2}" transform="rotate(45 ${c[0]} ${c[1]})" fill="#14161a" stroke="#e0c068" stroke-width="${Uc*0.1}"/>
+      <text x="${c[0]}" y="${c[1]+R*0.42}" font-size="${R*1.2}" text-anchor="middle" fill="#e0c068" style="pointer-events:none">◈</text></g>`;
+  }
   /* ---- подписи стран поверх границ при отдалении ---- */
   if(CM){
     if(_ncVer!==borderVer){
@@ -1346,7 +1737,8 @@ function renderRoads(U){
   }
   if(roadDraft&&roadDraft.length){
     const W=Math.max(0.4,U*0.22*S);
-    if(roadDraft.length>1) out+=draw(roadDraft,"#c9a25a",(window.__roadCls||"road"),true,"");
+    const ext=window.__extend?.kind==="road"?data.roads.find(o=>o.id===window.__extend.id):null;
+    if(roadDraft.length>1) out+=draw(roadDraft,"#c9a25a",(ext?.cls||"road"),true,"");
     for(const q of roadDraft) out+='<circle cx="'+q[0]+'" cy="'+q[1]+'" r="'+(W*1.6).toFixed(2)+
       '" fill="#c9a25a" stroke="#0f1113" stroke-width="'+(W*0.4).toFixed(2)+'" style="pointer-events:none"/>';
   }
@@ -1565,6 +1957,15 @@ function drawOverlay(){
     const st=STRUCT_TYPES.find(t=>t[0]===st0.type)||STRUCT_TYPES[0];
     o+=`<circle cx="${st0.x}" cy="${st0.y}" r="${st0.radius}" fill="${st[4]}" fill-opacity="0.07"
       stroke="${st[4]}" stroke-opacity="0.85" stroke-width="${sw*1.4}" stroke-dasharray="${sw*5} ${sw*4}"/>`;
+  }
+  /* провинция под курсором: светлая обводка поверх границ */
+  if(hoverProv&&layers.borders&&!panState){
+    const p=data.provinces.find(x=>x.id===hoverProv);
+    if(p&&p.points.length>2&&canSee(p.vis,p.nationId)){
+      const pts=simplify(p.points,0.5/view.s).map(q=>q.join(",")).join(" ");
+      o+=`<polygon points="${pts}" fill="#e8d9a8" fill-opacity="0.07" stroke="#0f1113" stroke-opacity="0.55" stroke-width="${sw*4.2}" stroke-linejoin="round"/>`+
+         `<polygon points="${pts}" fill="none" stroke="#f3e6b8" stroke-width="${sw*1.8}" stroke-linejoin="round"/>`;
+    }
   }
   /* рисуемый контур провинции */
   if(drawing&&drawing.length){
@@ -1822,17 +2223,21 @@ window.fieldChanged=()=>{
   if(s.kind==="province"){
     const p=data.provinces.find(x=>x.id===s.id);if(!p)return;
     p.name=$("#f_name").value;
-    if(p.nationId!==($("#f_nation").value||null))bumpBorders();
+    const natChanged=p.nationId!==($("#f_nation").value||null);
+    if(natChanged)bumpBorders();
     p.nationId=$("#f_nation").value||null;
     p.stats.pop=$("#f_pop").value;p.stats.fab=$("#f_fab").value;p.stats.notes=$("#f_notes").value;
-    p.stats.fabs=[];
-    document.querySelectorAll("[data-fab]").forEach(i=>{const v=+i.value||0; if(v>0)p.stats.fabs.push({type:i.dataset.fab,count:String(v)});});
-    p.stats.resv={};
-    document.querySelectorAll("[data-res]").forEach(i=>{if(i.value.trim())p.stats.resv[i.dataset.res]=i.value.trim();});
+    document.querySelectorAll("[data-fab]").forEach(i=>{const f=(p.stats.fabs||[]).find(x=>x.type===i.dataset.fab); if(f)f.count=String(Math.max(0,Math.round(+i.value||0)));});
+    document.querySelectorAll("[data-mn]").forEach(i=>{
+      const m=(p.stats.mines||[]).find(x=>x.id===i.dataset.mn); if(!m)return;
+      m.name=i.value; m.res=$(`[data-mr="${m.id}"]`).value; m.amt=Math.max(0,+$(`[data-ma="${m.id}"]`).value||0);
+    });
     p.secret=$("#f_secret").value;
     p.secretVis=[...document.querySelectorAll('input[data-sv]:checked')].map(i=>i.value);
     p.vis=readVis("f_vis");
     $("#f_vis_list").style.display=$("#f_vis").value==="list"?"":"none";
+    if(natChanged){render();reIns();return;}
+    refreshInsPool(p);
   }
   if(s.kind==="city"){
     const c=data.cities.find(x=>x.id===s.id);if(!c)return;
@@ -1934,9 +2339,9 @@ function writeEq(d){
 }
 window.deleteSelected=()=>{
   if(!selection)return;
-  snapshot(); markDirty();
   const s=selection;
-  if(!confirm("Удалить объект безвозвратно?"))return;
+  if(!confirm("Удалить объект? Вернуть можно через Ctrl+Z."))return;
+  snapshot(true); markDirty();
   if(s.kind==="province"){data.provinces=data.provinces.filter(x=>x.id!==s.id);bumpBorders();}
   if(s.kind==="city")data.cities=data.cities.filter(x=>x.id!==s.id);
   if(s.kind==="division")data.divisions=data.divisions.filter(x=>x.id!==s.id);
@@ -1956,18 +2361,13 @@ window.redrawTheatre=()=>{
 };
 window.extendRail=()=>{
   const r=data.rails.find(x=>x.id===selection.id); if(!r)return;
-  railDraft=r.pts.slice();
-  data.rails=data.rails.filter(x=>x.id!==r.id);
-  window.__railName=r.name; window.__railNation=r.nationId; window.__railVis=r.vis;
-  setTool("rail"); closeInspector(); toast("Кликами продолжай ветку, Enter - закончить");
+  railDraft=r.pts.slice(); window.__extend={kind:"rail",id:r.id};
+  setTool("rail"); closeInspector(); toast("Кликами продолжай ветку, Enter — закончить, Esc — оставить как было");
 };
 window.extendArrow=()=>{
   const a=data.arrows.find(x=>x.id===selection.id); if(!a)return;
-  arrowDraft=a.pts.slice();
-  const keep={...a};
-  data.arrows=data.arrows.filter(x=>x.id!==a.id);
-  window.__arrKeep=keep; window.__arrColor=a.color;
-  setTool("arrow"); closeInspector(); toast("Кликами продолжай стрелку, Enter — закончить");
+  arrowDraft=a.pts.slice(); window.__extend={kind:"arrow",id:a.id};
+  setTool("arrow"); closeInspector(); toast("Кликами продолжай стрелку, Enter — закончить, Esc — оставить как было");
 };
 window.reverseArrow=()=>{
   const a=data.arrows.find(x=>x.id===selection.id); if(!a)return;
@@ -1979,11 +2379,8 @@ window.setArrowColor=(c)=>{
 };
 window.extendRoad=()=>{
   const r=data.roads.find(x=>x.id===selection.id); if(!r)return;
-  roadDraft=r.pts.slice();
-  data.roads=data.roads.filter(x=>x.id!==r.id);
-  window.__roadName=r.name; window.__roadCls=r.cls; window.__roadColor=r.color;
-  window.__roadNation=r.nationId; window.__roadVis=r.vis;
-  setTool("road"); closeInspector(); toast("Кликами продолжай дорогу, Enter — закончить");
+  roadDraft=r.pts.slice(); window.__extend={kind:"road",id:r.id};
+  setTool("road"); closeInspector(); toast("Кликами продолжай дорогу, Enter — закончить, Esc — оставить как было");
 };
 window.reverseRoad=()=>{
   const r=data.roads.find(x=>x.id===selection.id); if(!r)return;
@@ -2003,6 +2400,81 @@ window.redrawProvince=()=>{
   drawing=[];setTool("province");
   window.__redrawTarget=selection.id;
 };
+
+/* ---- экономика в карточке провинции ---- */
+function resOptions(cur){
+  return `<optgroup label="Сырьё">${RAW_RES.map(k=>`<option value="${k}" ${cur===k?'selected':''}>${resName(k)}</option>`).join("")}</optgroup>`+
+    `<optgroup label="Прочее">${ECON_RES.filter(r=>!RAW_RES.includes(r[0])).map(r=>`<option value="${r[0]}" ${cur===r[0]?'selected':''}>${r[1]}</option>`).join("")}</optgroup>`;
+}
+function provDeposits(p){
+  const b=pbox(p);
+  return (data.deposits||[]).filter(d=>d.x>=b[0]&&d.x<=b[2]&&d.y>=b[1]&&d.y<=b[3]&&ptIn(p.points,d.x,d.y)&&canSee(d.vis,d.nationId));
+}
+function provEconEditor(p){
+  const mines=p.stats.mines||[], fabs=p.stats.fabs||[];
+  const nid=p.nationId, cap=nid?econCap(nid):null, capSet=!!nid&&data.econ.nat[nid]?.cap===p.id;
+  const deps=provDeposits(p);
+  return `<h3 class="sec" style="color:#9fb87f">Экономика · видит только владелец</h3>
+    ${nid?`<div class="checkrow" title="Здесь будет показываться общий пул ресурсов государства"><input type="checkbox" id="f_cap" ${capSet?'checked':''} onchange="setEconCap(this.checked)"> Столица экономики государства</div>
+      <div class="hint" style="margin-top:2px">Пул «${esc(nation(nid)?.name||"")}» показывается в провинции «${esc(cap?.name||"—")}»${!capSet&&cap?.id===p.id?" (выбрана автоматически: столичный город или самая крупная провинция)":""}.</div>`
+      :'<div class="hint">Ничейная провинция: её добыча и заводы ни в чей пул не поступают.</div>'}
+    <label>Добывающие точки · название, ресурс, добыча в год</label>
+    ${mines.map(m=>`<div class="rowx"><input data-mn="${m.id}" value="${esc(m.name)}" placeholder="Название" oninput="fieldChanged()">
+      <select data-mr="${m.id}" onchange="fieldChanged()" style="flex:0 0 100px">${resOptions(m.res)}</select>
+      <input class="q" data-ma="${m.id}" type="number" min="0" step="any" value="${m.amt}" oninput="fieldChanged()" title="Добыча в год">
+      <button class="danger" onclick="delMine('${m.id}')" title="Убрать добывающую точку">✕</button></div>`).join("")||'<div class="hint" style="margin-top:0">Добывающих точек нет.</div>'}
+    <div class="btnrow" style="margin-top:4px"><button onclick="addMine()" title="Шахта, скважина, лесозаготовка — любой источник сырья">+ Добывающая точка</button></div>
+    ${deps.length?`<div class="hint">Месторождения на карте в этой провинции: ${deps.map(d=>esc(d.name)+(d.output?" ("+esc(d.output)+")":"")).join(", ")} — их добыча тоже идёт в пул державы-владельца.</div>`:""}
+    <label>Предприятия · штук</label>
+    ${fabs.map(f=>`<div class="rowx"><span class="lbl" title="${esc(recipeText(f.type))}">${esc(facLabel(f.type))}</span>
+      <input class="q" data-fab="${f.type}" type="number" min="0" step="1" value="${esc(f.count)}" oninput="fieldChanged()" title="Сколько таких предприятий">
+      <button class="danger" onclick="delFab('${f.type}')" title="Снести предприятие">✕</button></div>`).join("")||'<div class="hint" style="margin-top:0">Предприятий нет.</div>'}
+    <div class="rowx" style="margin-top:6px">
+      <select id="f_newfab" onchange="$('#f_newfabh').textContent=recipeText(this.value)">${FACTORIES.map(f=>`<option value="${f[0]}">${f[2]} ${f[1]}</option>`).join("")}</select>
+      <input class="q" id="f_newfabn" type="number" min="1" step="1" value="1" title="Сколько построить">
+      <button class="primary" onclick="addFab()" title="Построить предприятие этого типа в провинции">+ Построить</button></div>
+    <div class="hint" id="f_newfabh" style="margin-top:2px">${esc(recipeText(FACTORIES[0][0]))}</div>
+    <label>Примечание к промышленности</label><textarea id="f_fab" oninput="fieldChanged()">${esc(p.stats.fab)}</textarea>
+    <div class="hint">Всё это видят только ГМ и государство-владелец. Наведи на предприятие — увидишь, что оно потребляет и выпускает. Цифры цепочек — «💰 Экономика → Механика заводов».</div>`;
+}
+function provEconView(p){
+  const mines=(p.stats.mines||[]).filter(m=>+m.amt), fabs=(p.stats.fabs||[]).filter(f=>num(f.count));
+  const deps=provDeposits(p).filter(d=>d.nationId===p.nationId&&num(d.output)&&d.vis!=="gm");
+  if(!mines.length&&!fabs.length&&!p.stats.fab&&!deps.length)return "";
+  return `<div class="card" style="border-left-color:var(--green)"><h4 style="color:#9fb87f">Экономика провинции</h4>
+    ${mines.length||deps.length?`<div class="sub" style="margin:4px 0 2px">Добыча в год</div><table class="restab">
+      ${mines.map(m=>`<tr><td>⛏ ${esc(m.name||"Добыча")} · ${esc(resName(m.res))}</td><td>${fmtN(m.amt)}</td></tr>`).join("")}
+      ${deps.map(d=>`<tr><td>◆ ${esc(d.name)} · ${esc(resName(d.type))}</td><td>${fmtN(num(d.output))}</td></tr>`).join("")}</table>`:""}
+    ${fabs.length?`<div class="sub" style="margin:6px 0 2px">Предприятия</div><table class="restab">
+      ${fabs.map(f=>`<tr title="${esc(recipeText(f.type))}"><td>${esc(facLabel(f.type))}</td><td>${esc(f.count)}</td></tr>`).join("")}</table>`:""}
+    ${p.stats.fab?`<pre>${esc(p.stats.fab)}</pre>`:""}</div>`;
+}
+function provPoolCard(p){
+  const nid=p.nationId;
+  if(!nid||!canSeeNationEcon(nid)||econCap(nid)?.id!==p.id)return "";
+  return `<h3 class="sec">◈ Пул ресурсов · ${esc(nation(nid)?.name||"")} · год ${data.econ.year}</h3>
+    <div id="insPool">${poolTable(nid)}</div>
+    <div class="hint">Наведи на ресурс — откуда он приходит, куда уходит и как считается итог за год.</div>
+    <div class="btnrow"><button onclick="openEconPanel('${nid}')" title="Полная таблица: запасы, модификаторы, прибавки, снабжение">💰 Вся экономика государства</button></div>`;
+}
+function refreshInsPool(p){ const b=$("#insPool"); if(b&&p.nationId)b.innerHTML=poolTable(p.nationId); }
+/* перерисовать карточку, не теряя прокрутку */
+function reIns(){ const b=$("#insBody"), st=b.scrollTop; renderInspector(); b.scrollTop=st; }
+const selProv=()=>selection?.kind==="province"?data.provinces.find(x=>x.id===selection.id):null;
+window.addMine=()=>{const p=selProv(); if(!p)return; snapshot(true); markDirty();
+  (p.stats.mines=p.stats.mines||[]).push({id:uid(),name:"Добыча",res:"coal",amt:1}); reIns();};
+window.delMine=id=>{const p=selProv(); if(!p)return; snapshot(true); markDirty();
+  p.stats.mines=(p.stats.mines||[]).filter(m=>m.id!==id); reIns();};
+window.addFab=()=>{const p=selProv(); if(!p)return;
+  const t=$("#f_newfab").value, n=Math.max(1,Math.round(+$("#f_newfabn").value||1));
+  snapshot(true); markDirty();
+  const f=(p.stats.fabs=p.stats.fabs||[]).find(x=>x.type===t);
+  if(f)f.count=String(num(f.count)+n); else p.stats.fabs.push({type:t,count:String(n)});
+  reIns(); toast(`Построено: ${facLabel(t)} ×${n}`);};
+window.delFab=t=>{const p=selProv(); if(!p)return; snapshot(true); markDirty();
+  p.stats.fabs=(p.stats.fabs||[]).filter(f=>f.type!==t); reIns();};
+window.setEconCap=on=>{const p=selProv(); if(!p||!p.nationId)return; snapshot(true); markDirty();
+  econNat(p.nationId,true).cap=on?p.id:null; render(); reIns();};
 
 function renderInspector(){
   if(!selection)return;
@@ -2024,18 +2496,8 @@ function renderInspector(){
         <h3 class="sec">Открытая статистика</h3>
         <label>Население</label><input id="f_pop" value="${esc(p.stats.pop)}" oninput="fieldChanged()">
         <label>Заметки</label><textarea id="f_notes" oninput="fieldChanged()">${esc(p.stats.notes)}</textarea>
-        <h3 class="sec" style="color:#9fb87f">Экономика · видит только владелец</h3>
-        <label>Производство ресурсов</label>
-        <div class="resgrid">
-          ${RESOURCES.map(r=>`<span>${r[1]}</span><input data-res="${r[0]}" value="${esc(p.stats.resv[r[0]]||"")}" oninput="fieldChanged()" placeholder="—">`).join("")}
-        </div>
-        <label>Предприятия</label>
-        <div class="resgrid">
-          ${FACTORIES.map(f=>{const cur=(p.stats.fabs||[]).find(x=>x.type===f[0]);
-            return `<span>${f[2]} ${f[1]}</span><input data-fab="${f[0]}" value="${esc(cur?cur.count:"")}" oninput="fieldChanged()" placeholder="—">`;}).join("")}
-        </div>
-        <label>Примечание к промышленности</label><textarea id="f_fab" oninput="fieldChanged()">${esc(p.stats.fab)}</textarea>
-        <div class="hint">Ресурсы и заводы автоматически видны только государству-владельцу провинции и ГМу.</div>
+        ${provPoolCard(p)}
+        ${provEconEditor(p)}
         <h3 class="sec" style="color:#d98f83">Скрытые данные</h3>
         <textarea id="f_secret" oninput="fieldChanged()" placeholder="Видит только ГМ и отмеченные игроки">${esc(p.secret)}</textarea>
         <label>Кому открыть скрытое</label>
@@ -2055,12 +2517,8 @@ function renderInspector(){
           ${p.stats.pop?`<pre>Население: ${esc(p.stats.pop)}</pre>`:""}
           ${p.stats.notes?`<pre>${esc(p.stats.notes)}</pre>`:""}
         </div>
-        ${eco&&(resLines(p).length||p.stats.fab||(p.stats.fabs||[]).length)?`<div class="card" style="border-left-color:var(--green)">
-          <h4 style="color:#9fb87f">Экономика</h4>
-          ${resLines(p).length?`<table class="restab">${resLines(p).map(([k,v])=>`<tr><td>${esc(k)}</td><td>${esc(v)}</td></tr>`).join("")}</table>`:""}
-          ${(p.stats.fabs||[]).length?`<table class="restab">${p.stats.fabs.map(f=>{const d0=FACTORIES.find(x=>x[0]===f.type);return `<tr><td>${d0?d0[2]+" "+d0[1]:esc(f.type)}</td><td>${esc(f.count)}</td></tr>`;}).join("")}</table>`:""}
-          ${p.stats.fab?`<pre>${esc(p.stats.fab)}</pre>`:""}
-        </div>`:""}
+        ${eco?provEconView(p):""}
+        ${provPoolCard(p)}
         ${canSeeSecret(p)&&p.secret?`<div class="card secret"><h4>Разведданные</h4><pre>${esc(p.secret)}</pre></div>`:""}`;
     }
   }
@@ -2401,16 +2859,18 @@ $("#mapMode").addEventListener("change",()=>{updateBackgrounds();render();});
 
 $("#btnLayers").addEventListener("click",()=>{
   openModal("Слои карты",`
-    ${[["borders","Границы и заливка стран"],["cities","Города"],["divisions","Соединения"],["structures","Постройки"],["deposits","Месторождения"],["rails","Железные дороги"],["roads","Дороги"],["zones","Штриховые области"],["arrows","Стрелки"],["legend","Легенда областей в углу"],["radii","Радиусы построек (все сразу)"],["labels","Подписи"],["countryNames","Названия стран при отдалении"],["hideFar","Прятать значки при отдалении"],["snap","Прилипание вершин к соседям"],["autoWeld","Сшивать границы автоматически"],["war","Линия фронта и театры"],["control","Заливка зон контроля"],["edgeScroll","Прокрутка карты у края экрана"]]
+    ${[["borders","Границы и заливка стран"],["cities","Города"],["divisions","Соединения"],["structures","Постройки"],["deposits","Месторождения"],["rails","Железные дороги"],["roads","Дороги"],["zones","Штриховые области"],["arrows","Стрелки"],["legend","Легенда областей в углу"],["radii","Радиусы построек (все сразу)"],["labels","Подписи"],["countryNames","Названия стран при отдалении"],["hideFar","Прятать значки при отдалении"],["snap","Прилипание вершин к соседям"],["autoWeld","Сшивать границы автоматически"],["war","Линия фронта и театры"],["control","Заливка зон контроля"],["edgeScroll","Прокрутка карты у края экрана"],["minimap","Миникарта в углу (N)"]]
       .map(([k,n])=>`<div class="checkrow"><input type="checkbox" id="ly_${k}" ${layers[k]?'checked':''}> ${n}</div>`).join("")}
     <h3 class="sec">Подписи соединений</h3>
     <div class="hint" style="margin-top:0">Отметь державы, чьи соединения показывать без названий - значки останутся, подписи исчезнут. Удобно, когда карта забита войсками.</div>
     ${data.nations.map(n=>`<div class="checkrow"><input type="checkbox" data-hl value="${n.id}" ${(data.meta.hideDivLabels||[]).includes(n.id)?'checked':''}> ${esc(n.name)}</div>`).join("")}
     <div class="btnrow"><button id="ly_allon">Скрыть у всех</button><button id="ly_alloff">Показать у всех</button></div>
   `,[["Готово","primary",()=>{
-    for(const k of ["borders","cities","divisions","structures","deposits","rails","roads","zones","arrows","legend","radii","labels","countryNames","hideFar","snap","autoWeld","war","control","edgeScroll"])layers[k]=$("#ly_"+k).checked;
-    data.meta.hideDivLabels=[...document.querySelectorAll("input[data-hl]:checked")].map(i=>i.value);
-    markDirty();closeModal();render();
+    for(const k of Object.keys(DEF_LAYERS))layers[k]=$("#ly_"+k).checked;
+    const hl=[...document.querySelectorAll("input[data-hl]:checked")].map(i=>i.value);
+    if(hl.join()!==(data.meta.hideDivLabels||[]).join()){snapshot(true);markDirty();}
+    data.meta.hideDivLabels=hl;
+    closeModal();showMini();render();
   }]]);
   const mm=$("#modals").lastElementChild;
   mm.querySelector("#ly_allon").onclick=()=>mm.querySelectorAll("input[data-hl]").forEach(i=>i.checked=true);
@@ -2430,7 +2890,7 @@ function attachUnderlay(mode,file){
     if(mapLoaded){el.width=img.naturalWidth;el.height=img.naturalHeight;}
     underlays[mode]=url;
     data.meta.underlayHints[mode]=file.name;
-    updateBackgrounds();render();
+    updateBackgrounds();render();buildMini();
     toast(`Подложка «${MODES.find(m=>m[0]===mode)[1]}» подключена`);
   };
   el.src=url;
@@ -2467,14 +2927,17 @@ $("#btnUnderlay").addEventListener("click",()=>{
 /* =============================================================
    МОДАЛКИ / ТОСТ
    ============================================================= */
-function openModal(title,bodyHtml,buttons){
+function openModal(title,bodyHtml,buttons,cls){
   const m=document.createElement("div");
   m.className="modal-back";
   m.innerHTML=`<div class="modal">
     <div class="mhead"><span>${title}</span><span class="close">✕</span></div>
     <div class="mbody">${bodyHtml}</div>
     <div class="mfoot"></div></div>`;
+  if(cls)m.querySelector(".modal").classList.add(cls);
   m.querySelector(".close").onclick=()=>m.remove();
+  /* клик по затемнению вокруг окна закрывает его (кроме экрана входа) */
+  m.addEventListener("pointerdown",e=>{ if(e.target===m&&title&&role)m.remove(); });
   const foot=m.querySelector(".mfoot");
   (buttons||[]).forEach(([label,cls,fn])=>{
     const b=document.createElement("button");b.textContent=label;if(cls)b.className=cls;
@@ -2514,6 +2977,7 @@ async function writeHandle(){
   }catch(e){ console.error(e); return false; }
 }
 async function saveNow(quiet){
+  if(!data)return;
   if(fileHandle){
     const ok=await writeHandle();
     if(!quiet)toast(ok?`Записано в ${fileHandle.name}`:"Не удалось записать файл");
@@ -2587,7 +3051,7 @@ function filterForPlayer(pid){
     if(!p.secretVis.includes(pid))p.secret="";
     p.secretVis=p.secretVis.filter(x=>x===pid);
     /* экономика вырезается физически, если провинция не твоей нации */
-    if(!(p.nationId&&p.nationId===pNation)){p.stats.resv={};p.stats.fab="";p.stats.fabs=[];}
+    if(!(p.nationId&&p.nationId===pNation)){p.stats.resv={};p.stats.fab="";p.stats.fabs=[];p.stats.mines=[];}
   });
   d.cities=d.cities.filter(c=>see(c.vis,null));
   d.divisions=d.divisions.filter(x=>see(x.vis,x.nationId));
@@ -2599,7 +3063,14 @@ function filterForPlayer(pid){
   d.zones=(d.zones||[]).filter(x=>see(x.vis,x.nationId));
   d.theatres=(d.theatres||[]).filter(x=>see(x.vis,null));
   d.templates=(d.templates||[]).filter(t=>t.nationId===pNation);  /* штаты чужих армий игроку не видны */
-  delete d.stocks; delete d.statRef;                              /* панель страны и эталон — только у ГМа */
+  /* запасы и экономика — только своего государства; эталон стат-листа — только у ГМа */
+  const st=d.stocks||{};
+  d.stocks={res:{},eq:{}};
+  if(pNation){ if(st.res?.[pNation])d.stocks.res[pNation]=st.res[pNation]; if(st.eq?.[pNation])d.stocks.eq[pNation]=st.eq[pNation]; }
+  delete d.statRef;
+  d.econ.nat = pNation&&d.econ.nat[pNation] ? {[pNation]:d.econ.nat[pNation]} : {};
+  if(pNation&&d.econ.nat[pNation]&&!d.provinces.some(p=>p.id===d.econ.nat[pNation].cap)) d.econ.nat[pNation].cap=null;
+  d.econ.log=(d.econ.log||[]).map(e=>({year:e.year,at:e.at,nat:pNation&&e.nat?.[pNation]?{[pNation]:e.nat[pNation]}:{}}));
   return d;
 }
 $("#btnExport").addEventListener("click",()=>{
@@ -2875,7 +3346,7 @@ function pickMap(cb){
       document.querySelectorAll("#world img.under").forEach(el=>{el.width=img.naturalWidth;el.height=img.naturalHeight;});
       mapLoaded=true;$("#nomap").style.display="none";
       data.meta.mapHint=f.name;
-      zoomFit();updateBackgrounds();if(cb)cb();
+      zoomFit();updateBackgrounds();showMini();if(cb)cb();
     };
     img.src=url;
   };
@@ -2923,6 +3394,7 @@ $("#btnSettings").addEventListener("click",()=>{
     <div class="list-row"><span style="flex:1">Постройки, %</span><input id="set_sstruct" type="number" min="10" max="600" step="10" value="${data.meta.iconScale.struct}" style="flex:0 0 80px"></div>
     <div class="list-row"><span style="flex:1">Месторождения, %</span><input id="set_sdep" type="number" min="10" max="600" step="10" value="${data.meta.iconScale.dep||100}" style="flex:0 0 80px"></div>
     <div class="list-row"><span style="flex:1">Железные дороги, %</span><input id="set_srail" type="number" min="10" max="600" step="10" value="${data.meta.iconScale.rail||100}" style="flex:0 0 80px"></div>
+    <div class="list-row"><span style="flex:1">Дороги, %</span><input id="set_sroad" type="number" min="10" max="600" step="10" value="${data.meta.iconScale.road||100}" style="flex:0 0 80px"></div>
     <div class="hint">100% — размер по умолчанию. Значки заданы в единицах карты и уменьшаются вместе с ней при отдалении.</div>
     <h3 class="sec">Государства</h3><div id="set_nats">${natRows()}</div>
     <div class="btnrow"><button id="set_addnat">+ Государство</button></div>
@@ -2930,25 +3402,32 @@ $("#btnSettings").addEventListener("click",()=>{
     <div class="btnrow"><button id="set_addpl">+ Игрок</button></div>
     <div class="hint">Код в мастер-файле — защита «на честном слове». Настоящая секретность — только через «Сборку игроку»: там скрытое вырезано из файла целиком.</div>
   `,[["Применить","primary",()=>{
-    data.meta.name=$("#set_name").value;data.meta.gmCode=$("#set_gm").value;
-    data.meta.defRadius={supply:Math.max(0,+$("#set_rsup").value||0),air:Math.max(0,+$("#set_rair").value||0)};
-    data.meta.iconScale={div:+$("#set_sdiv").value||100,city:+$("#set_scity").value||100,struct:+$("#set_sstruct").value||100,
-      dep:+$("#set_sdep").value||100,rail:+$("#set_srail").value||100};
-    document.querySelectorAll("[data-nn]").forEach(i=>{const n=nation(i.dataset.nn);if(n)n.name=i.value;});
-    document.querySelectorAll("[data-nc]").forEach(i=>{const n=nation(i.dataset.nc);if(n)n.color=i.value;});
-    document.querySelectorAll("[data-pn]").forEach(i=>{const p=player(i.dataset.pn);if(p)p.name=i.value;});
-    document.querySelectorAll("[data-pc]").forEach(i=>{const p=player(i.dataset.pc);if(p)p.code=i.value;});
-    document.querySelectorAll("[data-pnat]").forEach(i=>{const p=player(i.dataset.pnat);if(p)p.nationId=i.value||null;});
-    closeModal();render();toast("Настройки применены");
+    snapshot(true); collect(); markDirty(); bumpBorders();
+    closeModal();render();renderInspector();toast("Настройки применены");
   }]]);
+  /* поля окна записываются в данные и перед перерисовкой окна: добавление игрока не стирает набранное */
+  function collect(){
+    data.meta.name=m.querySelector("#set_name").value;data.meta.gmCode=m.querySelector("#set_gm").value;
+    data.meta.defRadius={supply:Math.max(0,+m.querySelector("#set_rsup").value||0),air:Math.max(0,+m.querySelector("#set_rair").value||0)};
+    const sc=id=>Math.max(10,+m.querySelector(id).value||100);
+    data.meta.iconScale={div:sc("#set_sdiv"),city:sc("#set_scity"),struct:sc("#set_sstruct"),dep:sc("#set_sdep"),rail:sc("#set_srail"),road:sc("#set_sroad")};
+    m.querySelectorAll("[data-nn]").forEach(i=>{const n=nation(i.dataset.nn);if(n)n.name=i.value;});
+    m.querySelectorAll("[data-nc]").forEach(i=>{const n=nation(i.dataset.nc);if(n)n.color=i.value;});
+    m.querySelectorAll("[data-pn]").forEach(i=>{const p=player(i.dataset.pn);if(p)p.name=i.value;});
+    m.querySelectorAll("[data-pc]").forEach(i=>{const p=player(i.dataset.pc);if(p)p.code=i.value;});
+    m.querySelectorAll("[data-pnat]").forEach(i=>{const p=player(i.dataset.pnat);if(p)p.nationId=i.value||null;});
+  }
+  const reopen=()=>{const sc=m.querySelector(".mbody").scrollTop; m.remove(); $("#btnSettings").click(); $("#modals").lastElementChild.querySelector(".mbody").scrollTop=sc;};
   m.querySelector("#set_map").onclick=()=>pickMap();
   m.querySelector("#set_rapply").onclick=()=>{
     const rs=Math.max(0,+m.querySelector("#set_rsup").value||0), ra=Math.max(0,+m.querySelector("#set_rair").value||0);
+    snapshot(true); markDirty();
     data.meta.defRadius={supply:rs,air:ra};
     let k=0; for(const st of data.structures){ st.radius = st.type==="air"?ra:rs; k++; }
     render(); toast(`Радиус переписан у ${k} построек`);
   };
   m.querySelector("#set_weld").onclick=()=>{
+    snapshot(true); markDirty();
     window.__weldBackup=JSON.parse(JSON.stringify(data.provinces));
     const t0=performance.now(), r=weldBorders();
     render();
@@ -2956,14 +3435,41 @@ $("#btnSettings").addEventListener("click",()=>{
   };
   m.querySelector("#set_unweld").onclick=()=>{
     if(!window.__weldBackup){toast("Нечего отменять");return;}
+    snapshot(true); markDirty();
     data.provinces=window.__weldBackup; window.__weldBackup=null;
     bumpBorders(); render(); toast("Границы возвращены к прежнему виду");
   };
-  m.querySelector("#set_addnat").onclick=()=>{data.nations.push({id:uid(),name:"Новое государство",color:"#888888"});m.remove();$("#btnSettings").click();};
-  m.querySelector("#set_addpl").onclick=()=>{data.players.push({id:uid(),name:"Игрок",code:"",nationId:null});m.remove();$("#btnSettings").click();};
-  m.querySelectorAll("[data-nd]").forEach(b=>b.onclick=()=>{data.nations=data.nations.filter(n=>n.id!==b.dataset.nd);m.remove();$("#btnSettings").click();});
-  m.querySelectorAll("[data-pd]").forEach(b=>b.onclick=()=>{data.players=data.players.filter(p=>p.id!==b.dataset.pd);m.remove();$("#btnSettings").click();});
+  m.querySelector("#set_addnat").onclick=()=>{collect();snapshot(true);markDirty();data.nations.push({id:uid(),name:"Новое государство",color:"#888888"});reopen();};
+  m.querySelector("#set_addpl").onclick=()=>{collect();snapshot(true);markDirty();data.players.push({id:uid(),name:"Игрок",code:"",nationId:null});reopen();};
+  m.querySelectorAll("[data-nd]").forEach(b=>b.onclick=()=>{
+    const id=b.dataset.nd, n=nation(id);
+    const used=data.provinces.filter(p=>p.nationId===id).length+data.divisions.filter(d=>d.nationId===id).length;
+    if(!confirm(`Удалить государство «${n?.name||""}»?`+(used?` Его провинции и войска (${used}) станут ничьими, запасы и экономика удалятся.`:"")))return;
+    collect(); snapshot(true); markDirty(); purgeNation(id); render(); reopen();
+  });
+  m.querySelectorAll("[data-pd]").forEach(b=>b.onclick=()=>{
+    collect(); snapshot(true); markDirty();
+    const id=b.dataset.pd;
+    data.players=data.players.filter(p=>p.id!==id);
+    /* убираем игрока из всех списков видимости */
+    const strip=o=>{ if(Array.isArray(o.vis))o.vis=o.vis.filter(x=>x!==id); if(Array.isArray(o.secretVis))o.secretVis=o.secretVis.filter(x=>x!==id); };
+    for(const k of ["provinces","cities","divisions","structures","deposits","rails","roads","zones","arrows","theatres"]) (data[k]||[]).forEach(strip);
+    reopen();
+  });
 });
+/* удаление государства: ссылки на него не остаются висеть в объектах */
+function purgeNation(id){
+  for(const k of ["provinces","divisions","structures","deposits","rails","roads","zones","arrows"])
+    for(const o of (data[k]||[])) if(o.nationId===id)o.nationId=null;
+  data.players.forEach(p=>{if(p.nationId===id)p.nationId=null;});
+  (data.theatres||[]).forEach(t=>{t.sideA=t.sideA.filter(x=>x!==id);t.sideB=t.sideB.filter(x=>x!==id);});
+  data.templates=data.templates.filter(t=>t.nationId!==id);
+  delete data.stocks.res[id]; delete data.stocks.eq[id]; delete data.statRef[id]; delete data.econ.nat[id];
+  data.meta.hideDivLabels=(data.meta.hideDivLabels||[]).filter(x=>x!==id);
+  data.nations=data.nations.filter(n=>n.id!==id);
+  if(panelNation===id)panelNation=null;
+  bumpBorders(); bumpWar();
+}
 
 /* =============================================================
    ПАНЕЛЬ УПРАВЛЕНИЯ СТРАНОЙ (только ГМ)
@@ -3007,13 +3513,7 @@ function openCountryPanel(){
   data.stocks.eq[nid]=data.stocks.eq[nid]||{};
   const tpl=getTemplate(nid,panelTplType,true);
 
-  const resRows=RESOURCES.map(([k,n])=>{
-    const stock=num(data.stocks.res[nid][k]), prov=provSum(nid,k), diff=stock-prov;
-    return `<tr><td>${n}</td>
-      <td><input data-sres="${k}" value="${esc(data.stocks.res[nid][k]||"")}" placeholder="—"></td>
-      <td class="numc">${prov||"—"}</td>
-      <td class="numc ${diff===0?'':(diff>0?'plus':'minus')}">${stock||prov?(diff>0?"+"+diff:diff):"—"}</td></tr>`;
-  }).join("");
+  const EC=econCalc(nid);
 
   const eqRows=EQUIP.map(([k,n])=>{
     const total=num(data.stocks.eq[nid][k]), inDiv=divSum(nid,k), lim=limSum(nid,k);
@@ -3063,7 +3563,7 @@ function openCountryPanel(){
   /* --- строки сверки --- */
   data.statRef[nid]=data.statRef[nid]||{};
   const REFROWS=[
-    ...RESOURCES.map(([k,n])=>["res:"+k,n,provSum(nid,k)]),
+    ...RESOURCES.map(([k,n])=>["res:"+k,n+" (выработка в год)",rnd(EC[k]?.prod||0)]),
     ["fac:total","Предприятий всего",factTotal],
     ["div:total","Соединений всего",mine.length],
     ["div:men","Людей в частях",menNow],
@@ -3118,8 +3618,8 @@ function openCountryPanel(){
     <div class="btnrow"><button id="cp_pullmap">Взять значения с карты</button><button id="cp_clearref" class="danger">Очистить эталон</button></div>
 
     <h3 class="sec">Ресурсы</h3>
-    <table class="ledger"><tr><th>Ресурс</th><th>Всего у страны</th><th>По провинциям</th><th>Разница</th></tr>${resRows}</table>
-    <div class="hint">«По провинциям» — сумма первых чисел из полей ресурсов всех провинций этой страны. Разница = заявленное всего − разложенное по карте.</div>
+    <div class="hint" style="margin-top:0">Запасы, добыча, заводы, модификаторы и снабжение теперь ведутся в окне «💰 Экономика». Выпуск оружейных, артиллерийских, автомобильных и танковых заводов пополняет «Всего у страны» в таблице снаряжения ниже при каждом «Прошёл год».</div>
+    <div class="btnrow"><button id="cp_econ">💰 Открыть экономику государства</button></div>
 
     <h3 class="sec">Снаряжение</h3>
     <table class="ledger"><tr><th>Вид</th><th>Всего у страны</th><th>В дивизиях</th><th>Штат</th><th>На складе</th><th>Некомплект</th></tr>${eqRows}</table>
@@ -3142,7 +3642,7 @@ function openCountryPanel(){
     </div>
     <div class="hint">Один шаблон на тип соединения в стране: все её ${DIV_TYPES.find(t=>t[0]===panelTplType)?.[1].toLowerCase()} получают эти лимиты. Соединений этого типа сейчас: <b style="color:var(--brass)">${data.divisions.filter(d=>d.nationId===nid&&d.type===panelTplType).length}</b>.</div>
   `,[["Применить","primary",()=>{
-    savePanel(); closeModal(); render(); renderInspector(); toast("Данные страны сохранены");
+    snapshot(true); savePanel(); markDirty(); closeModal(); render(); renderInspector(); toast("Данные страны сохранены");
   }]]);
 
   function savePanel(){
@@ -3152,6 +3652,7 @@ function openCountryPanel(){
     m.querySelectorAll("[data-seq]").forEach(i=>{const v=i.value.trim();if(v)data.stocks.eq[nid][i.dataset.seq]=v;else delete data.stocks.eq[nid][i.dataset.seq];});
     m.querySelectorAll("[data-tpl]").forEach(i=>{const v=i.value.trim();if(v)tpl.limits[i.dataset.tpl]=v;else delete tpl.limits[i.dataset.tpl];});
   }
+  m.querySelector("#cp_econ").onclick=()=>{savePanel();closeModal();openEconPanel(nid);};
   m.querySelector("#cp_pullmap").onclick=()=>{
     for(const [key,,mapVal] of REFROWS) if(mapVal)data.statRef[nid][key]=String(mapVal);
     m.remove();openCountryPanel();toast("Эталон заполнен значениями с карты");
@@ -3165,13 +3666,194 @@ function openCountryPanel(){
     savePanel();
     const lvl=m.querySelector("#cp_train").value;
     const list=data.divisions.filter(d=>d.nationId===nid);
+    snapshot(true); markDirty();
     list.forEach(d=>d.training=lvl);
     m.remove();openCountryPanel();renderInspector();
     toast(`Обученность «${lvl}» выдана: ${list.length} соединений`);
   };
-  m.querySelector("#cp_dist").onclick=()=>{savePanel();distributeEquip(nid);m.remove();openCountryPanel();render();};
+  m.querySelector("#cp_dist").onclick=()=>{snapshot(true);markDirty();savePanel();distributeEquip(nid);m.remove();openCountryPanel();render();};
 }
 $("#btnCountry").addEventListener("click",openCountryPanel);
+
+/* =============================================================
+   ОКНО ЭКОНОМИКИ: пул государства, модификаторы, прибавки,
+   снабжение, провинции с предприятиями, журнал лет
+   ============================================================= */
+let econNation=null, econShowAll=false;
+function afterEcon(){ const p=selProv(); if(p)refreshInsPool(p); }
+function openEconPanel(nid){
+  if(!data)return;
+  const gm=!!role.gm;
+  const list=gm?data.nations:data.nations.filter(n=>n.id===myNation());
+  if(!list.length){toast(gm?"Сначала заведи государства в Настройках":"Тебе не назначено государство");return;}
+  nid=(nid&&list.some(n=>n.id===nid))?nid:(econNation&&list.some(n=>n.id===econNation)?econNation:list[0].id);
+  econNation=nid;
+  const m=openModal("Экономика государства","",[["Закрыть","primary",closeModal]],"wide");
+  const body=m.querySelector(".mbody");
+  const q=s=>body.querySelector(s);
+  const draw=()=>{
+    if(!m.isConnected)return;
+    const e=econNat(nid), cap=econCap(nid), provs=data.provinces.filter(p=>p.nationId===nid);
+    const rowsP=provs.filter(p=>(p.stats.mines||[]).some(x=>+x.amt)||(p.stats.fabs||[]).some(f=>num(f.count))).map(p=>
+      `<tr data-pv="${p.id}" style="cursor:pointer" title="Показать провинцию на карте"><td>${cap?.id===p.id?"◈ ":""}${esc(p.name)}</td>
+        <td style="text-align:left;white-space:normal">${(p.stats.mines||[]).filter(x=>+x.amt).map(x=>esc(resName(x.res))+" "+fmtN(x.amt)).join(", ")||"—"}</td>
+        <td style="text-align:left;white-space:normal">${(p.stats.fabs||[]).filter(f=>num(f.count)).map(f=>esc(facLabel(f.type))+" ×"+esc(f.count)).join(", ")||"—"}</td></tr>`).join("");
+    const logs=(data.econ.log||[]).filter(l=>l.nat?.[nid]).slice(0,6);
+    const sc=body.scrollTop;
+    body.innerHTML=`
+      <div class="list-row" style="margin-bottom:6px">
+        ${gm?`<select id="ec_nat" style="flex:1" title="Государство">${list.map(n=>`<option value="${n.id}" ${n.id===nid?'selected':''}>${esc(n.name)}</option>`).join("")}</select>`
+            :`<b style="flex:1;font-family:var(--serif);font-size:15px;color:${nation(nid)?.color||"var(--ink)"}">${esc(nation(nid)?.name||"")}</b>`}
+        <span class="pill" style="font-size:11px;padding:3px 8px;flex:0 0 auto" title="Счётчик лет партии: растёт при каждом «Прошёл год»">год ${data.econ.year}</span>
+      </div>
+      <div class="list-row"><span style="flex:0 0 auto;color:var(--ink-dim);font-size:11px;letter-spacing:.05em">СТОЛИЦА ЭКОНОМИКИ</span>
+        ${gm?`<select id="ec_cap" style="flex:1" title="Провинция, в карточке которой показывается пул государства">
+              <option value="">авто — ${esc(!e.cap&&cap?cap.name:"столичный город или крупнейшая провинция")}</option>
+              ${provs.map(p=>`<option value="${p.id}" ${e.cap===p.id?'selected':''}>${esc(p.name)}</option>`).join("")}</select>`
+            :`<span style="flex:1">${esc(cap?.name||"—")}</span>`}
+        ${cap?`<button id="ec_go" title="Показать провинцию на карте">◎ На карте</button>`:""}
+      </div>
+      ${gm?`<div class="btnrow" style="margin-top:6px">
+        <button id="ec_year" class="primary" title="Применить итог за год к запасам всех государств">⏭ Прошёл год</button>
+        <button id="ec_rec" title="Что потребляют и выпускают заводы каждого типа">⚙ Механика заводов</button>
+        <button id="ec_all" title="Показать в таблице все ресурсы, чтобы вписать запасы или снабжение">${econShowAll?"Только ненулевые":"Все ресурсы"}</button></div>`:""}
+      <div id="ec_pool">${poolTable(nid,{full:true,edit:gm,all:gm&&econShowAll})}</div>
+      <div class="hint">Итог/год = (добыча + выпуск заводов) × (1 + модификатор %) + прибавки − потребление заводов − снабжение. Наведи на строку — откуда приходит и куда уходит ресурс.
+        ${gm?"Запас, модификатор и снабжение правятся прямо в таблице и сразу пересчитываются.":""}</div>
+      <h3 class="sec">Прибавки и убыли</h3>
+      <div class="hint" style="margin-top:0">Торговля, дань, особые приросты и потери — постоянная прибавка к ресурсу каждый год (убыль — со знаком минус).</div>
+      <div id="ec_adds">${(e.adds||[]).map(a=>gm
+        ?`<div class="rowx"><select data-ar="${a.id}" style="flex:0 0 180px">${resOptions(a.res)}</select>
+            <input class="q" type="number" step="any" data-aa="${a.id}" value="${a.amt}" title="В год; убыль — со знаком минус">
+            <input data-an="${a.id}" value="${esc(a.note)}" placeholder="Откуда: торговля с …, особый прирост…">
+            <button class="danger" data-ad="${a.id}" title="Убрать прибавку">✕</button></div>`
+        :`<div class="rowx"><span class="lbl">${esc(resName(a.res))} · ${esc(a.note||"прибавка")}</span><span class="io ${sgnC(a.amt)}" style="font-size:12px">${pmN(a.amt)}</span></div>`).join("")
+        ||'<div class="hint">Нет.</div>'}</div>
+      ${gm?`<div class="btnrow"><button id="ec_addadd">+ Прибавка / убыль</button></div>`:""}
+      <h3 class="sec">Провинции и предприятия</h3>
+      ${rowsP?`<table class="pool"><tr><th>Провинция</th><th style="text-align:left">Добыча в год</th><th style="text-align:left">Предприятия</th></tr>${rowsP}</table>`
+        :`<div class="hint">В провинциях государства пока нет ни добычи, ни предприятий.${gm?" Они добавляются в карточке провинции.":""}</div>`}
+      <h3 class="sec">Журнал лет</h3>
+      <div class="econlog">${logs.length?logs.map(l=>`<div class="card" style="padding:6px 10px;border-left-color:var(--line)">
+          <div class="sub" style="margin:0 0 3px">Год ${l.year} · ${esc(l.at||"")}</div>
+          <div style="font-size:11px;line-height:1.7">${l.nat[nid].map(([k,was,net,nv,lack])=>`${esc(resName(k))}: ${fmtN(was)} → <b>${fmtN(nv)}</b> <span class="${sgnC(net)}">(${pmN(net)})</span>${lack?` <span class="minus">нехватка ${fmtN(lack)}</span>`:""}`).join(" · ")}</div></div>`).join("")
+        :'<div class="hint">«Прошёл год» ещё не применялся.</div>'}</div>`;
+    body.scrollTop=sc;
+    if(q("#ec_nat"))q("#ec_nat").onchange=ev=>{nid=econNation=ev.target.value;draw();};
+    if(q("#ec_cap"))q("#ec_cap").onchange=ev=>{snapshot(true);markDirty();econNat(nid,true).cap=ev.target.value||null;render();if(selProv())reIns();draw();};
+    if(q("#ec_go"))q("#ec_go").onclick=()=>{const p=econCap(nid);if(!p)return;closeModal();select("province",p.id);focusSelection();};
+    if(q("#ec_year"))q("#ec_year").onclick=()=>confirmYear(draw);
+    if(q("#ec_rec"))q("#ec_rec").onclick=()=>openRecipes(draw);
+    if(q("#ec_all"))q("#ec_all").onclick=()=>{econShowAll=!econShowAll;draw();};
+    if(q("#ec_addadd"))q("#ec_addadd").onclick=()=>{snapshot(true);markDirty();econNat(nid,true).adds.push({id:uid(),res:"coal",amt:0,note:""});draw();};
+    body.querySelectorAll("[data-ad]").forEach(b=>b.onclick=()=>{snapshot(true);markDirty();const e2=econNat(nid,true);e2.adds=e2.adds.filter(a=>a.id!==b.dataset.ad);draw();afterEcon();});
+    body.querySelectorAll("[data-pv]").forEach(tr=>tr.onclick=()=>{closeModal();select("province",tr.dataset.pv);focusSelection();});
+  };
+  /* поля пишутся в данные на лету, вычисляемые ячейки пересчитываются без перерисовки окна */
+  const onField=ev=>{
+    if(!gm)return;
+    const t=ev.target, d=t.dataset, e=econNat(nid,true);
+    let pool=false;
+    if(d.est!==undefined) stockSet(nid,d.est,t.value.trim());
+    else if(d.emod!==undefined){const v=t.value.trim(); if(v)e.mods[d.emod]=+v.replace(",",".")||0; else delete e.mods[d.emod];}
+    else if(d.eneed!==undefined){const v=t.value.trim(); if(v)e.need[d.eneed]=v; else delete e.need[d.eneed];}
+    else if(d.ar||d.aa||d.an){
+      const a=e.adds.find(x=>x.id===(d.ar||d.aa||d.an)); if(!a)return;
+      if(d.ar)a.res=t.value; if(d.aa)a.amt=+t.value||0; if(d.an)a.note=t.value;
+      pool=true;
+    } else return;
+    if(ev.type==="input"){snapshot();markDirty();}
+    if(pool&&ev.type==="change") q("#ec_pool").innerHTML=poolTable(nid,{full:true,edit:gm,all:gm&&econShowAll});
+    else refreshPool(q("#ec_pool"),nid);
+    afterEcon();
+  };
+  body.addEventListener("input",onField); body.addEventListener("change",onField);
+  draw();
+}
+$("#btnEcon").addEventListener("click",()=>openEconPanel(role?.gm?null:myNation()));
+
+/* ---- «Прошёл год»: итог каждого ресурса ложится в запас ---- */
+function confirmYear(after){
+  if(!role?.gm)return;
+  if(!data.nations.length){toast("Сначала заведи государства");return;}
+  const rows=data.nations.map(n=>{
+    const R=econCalc(n.id); let up=0,down=0; const lack=[];
+    for(const [k,r] of Object.entries(R)){ if(r.net>0)up++; else if(r.net<0){down++; if(r.stock+r.net<0)lack.push(resName(k));} }
+    return `<tr><td>${esc(n.name)}</td><td class="plus">${up||"—"}</td><td class="minus">${down||"—"}</td>
+      <td style="text-align:left;white-space:normal" class="${lack.length?"minus":"dim"}">${esc(lack.join(", "))||"—"}</td></tr>`;
+  }).join("");
+  openModal(`Прошёл год ${data.econ.year}`,`
+    <div class="hint" style="margin-top:0;margin-bottom:6px">Годовой итог каждого ресурса прибавится к запасам всех государств. Если запаса не хватает, он обнуляется, а нехватка пишется в журнал. Отменить можно через Ctrl+Z.</div>
+    <table class="pool"><tr><th>Государство</th><th>Растёт</th><th>Убывает</th><th style="text-align:left">Не хватит</th></tr>${rows}</table>`,
+    [["Применить","primary",()=>{closeModal();passYear();if(after)after();}],["Отмена","",closeModal]]);
+}
+function passYear(){
+  if(!role?.gm)return;
+  snapshot(true); markDirty();
+  const y=data.econ.year, entry={year:y,at:new Date().toISOString().slice(0,10),nat:{}};
+  let short=0;
+  for(const n of data.nations){
+    const R=econCalc(n.id), lines=[];
+    for(const [k,r] of Object.entries(R)){
+      if(!r.net)continue;
+      const was=r.stock; let nv=rnd(was+r.net), lack=0;
+      if(nv<0){lack=-nv;nv=0;short++;}
+      stockSet(n.id,k,nv);
+      lines.push([k,was,r.net,nv,lack]);
+    }
+    if(lines.length)entry.nat[n.id]=lines;
+  }
+  data.econ.log.unshift(entry); if(data.econ.log.length>30)data.econ.log.length=30;
+  data.econ.year=y+1;
+  render(); if(selection)reIns();
+  toast(`Прошёл год ${y}. Запасы пересчитаны${short?` · нехватка по ${short} позициям — см. журнал`:""}`);
+}
+
+/* ---- механика заводов: входы и выходы каждого типа ---- */
+function openRecipes(after){
+  if(!role?.gm)return;
+  const m=openModal("Механика заводов","",[["Готово","primary",()=>{closeModal();if(after)after();}]],"wide");
+  const body=m.querySelector(".mbody");
+  const side=(t,sd)=>Object.entries(data.econ.recipes[t][sd]||{}).map(([k,v])=>
+    `<div class="rowx"><select data-rk="${t}|${sd}|${k}">${resOptions(k)}</select>
+      <input class="q" type="number" min="0" step="any" data-rq="${t}|${sd}|${k}" value="${v}" title="В год на одно предприятие">
+      <button class="danger" data-rx="${t}|${sd}|${k}" title="Убрать ресурс">✕</button></div>`).join("")
+    +`<button data-ra="${t}|${sd}" style="padding:2px 9px" title="Добавить ресурс">+</button>`;
+  const draw=()=>{
+    const sc=body.scrollTop;
+    body.innerHTML=`<div class="hint" style="margin-top:0;margin-bottom:8px">Сколько одно предприятие потребляет и выпускает за год. Цифры сразу пересчитывают пулы всех государств. Это заготовка механики — подставь свои правила.</div>
+      ${FACTORIES.map(f=>{
+        const r=data.econ.recipes[f[0]]||(data.econ.recipes[f[0]]={in:{},out:{}}); r.in=r.in||{}; r.out=r.out||{};
+        return `<div class="rcard"><h4>${f[2]} ${f[1]}</h4><div class="cols">
+          <div><div class="cap">Потребляет</div>${side(f[0],"in")}</div>
+          <div><div class="cap">Производит</div>${side(f[0],"out")}</div></div></div>`;}).join("")}
+      <div class="btnrow"><button id="rc_def" class="danger">Вернуть цифры по умолчанию</button></div>`;
+    body.scrollTop=sc;
+  };
+  body.addEventListener("change",ev=>{
+    const t=ev.target;
+    if(t.dataset.rk){
+      const [f,sd,k]=t.dataset.rk.split("|"), o=data.econ.recipes[f][sd];
+      if(t.value!==k&&o[t.value]!==undefined){toast("Этот ресурс уже есть в списке");draw();return;}
+      snapshot(true);markDirty(); const v=o[k]; delete o[k]; o[t.value]=v; draw(); afterEcon();
+    }
+    if(t.dataset.rq){const [f,sd,k]=t.dataset.rq.split("|"); snapshot(true);markDirty(); data.econ.recipes[f][sd][k]=Math.max(0,+t.value||0); afterEcon();}
+  });
+  body.addEventListener("click",ev=>{
+    const t=ev.target;
+    if(t.dataset.rx){const [f,sd,k]=t.dataset.rx.split("|"); snapshot(true);markDirty(); delete data.econ.recipes[f][sd][k]; draw(); afterEcon();}
+    if(t.dataset.ra){
+      const [f,sd]=t.dataset.ra.split("|"), o=data.econ.recipes[f][sd];
+      const k=ECON_RES.map(r=>r[0]).find(x=>o[x]===undefined); if(!k)return;
+      snapshot(true);markDirty(); o[k]=1; draw(); afterEcon();
+    }
+    if(t.id==="rc_def"){
+      if(!confirm("Вернуть все цепочки заводов к значениям по умолчанию?"))return;
+      snapshot(true);markDirty(); data.econ.recipes=JSON.parse(JSON.stringify(DEF_RECIPES)); draw(); afterEcon();
+    }
+  });
+  draw();
+}
 
 /* =============================================================
    ИНСТРУМЕНТЫ ГМА
@@ -3205,10 +3887,9 @@ function openSearch(){
   `,[]);
   const inp=m.querySelector("#sq"), box=m.querySelector("#sres");
   const jump=(x,y,kind,id)=>{
-    const r=vp.getBoundingClientRect();
-    view.s=Math.max(view.s,0.6);
-    view.x=r.width/2-x*view.s; view.y=r.height/2-y*view.s;
-    applyView(); m.remove(); if(kind)select(kind,id); else render();
+    m.remove();
+    if(kind){select(kind,id); if(!focusSelection())flyTo(x,y,Math.max(view.s,0.6));}
+    else flyTo(x,y,Math.max(view.s,0.6));
   };
   const run=()=>{
     const q=inp.value.trim().toLowerCase();
@@ -3390,12 +4071,7 @@ function openWarPanel(){
   m.querySelectorAll("[data-th]").forEach(el=>el.onclick=()=>{
     const th=data.theatres.find(x=>x.id===el.dataset.th);
     closeModal(); select("theatre",th.id);
-    if(th.points.length>2){
-      const b=bboxOf(th.points), r=vp.getBoundingClientRect();
-      view.s=Math.min(r.width/(b[2]-b[0]),r.height/(b[3]-b[1]))*0.8;
-      view.x=r.width/2-((b[0]+b[2])/2)*view.s; view.y=r.height/2-((b[1]+b[3])/2)*view.s;
-      applyView();render();
-    }
+    if(th.points.length>2) flyToBox(bboxOf(th.points),0.8);
   });
   m.querySelector("#wp_new").onclick=()=>{closeModal();setTool("theatre");toast("Обведи область театра, Enter - замкнуть");};
   m.querySelector("#wp_recalc").onclick=()=>{bumpWar();closeModal();openWarPanel();render();};
@@ -3404,10 +4080,15 @@ $("#btnWar").addEventListener("click",openWarPanel);
 $("#btnTools").addEventListener("click",()=>{
   const m=openModal("Инструменты ГМа",`
     <div class="btnrow" style="margin-top:0">
-      <button id="gt_search">🔍 Поиск по карте (Ctrl+F)</button>
-      <button id="gt_dice">🎲 Бросок для вердикта</button>
-      <button id="gt_ruler">📏 Линейка (L)</button>
+      <button id="gt_search" title="Найти провинцию, город, соединение и перелететь к нему (Ctrl+F)">🔍 Поиск по карте</button>
+      <button id="gt_dice" title="Бросок 1–100 с модификатором и вердиктом">🎲 Бросок для вердикта</button>
+      <button id="gt_ruler" title="Измерить расстояние по карте (L)">📏 Линейка</button>
     </div>
+    <h3 class="sec">Экономика</h3>
+    <div class="hint" style="margin-top:0">Год партии: <b style="color:var(--brass)">${data.econ.year}</b>. «Прошёл год» применяет годовой итог каждого ресурса к запасам всех государств.</div>
+    <div class="btnrow"><button id="gt_year" class="primary" title="Применить доходы и расходы за год ко всем государствам">⏭ Прошёл год</button>
+      <button id="gt_econ" title="Пул ресурсов, модификаторы, прибавки, снабжение">💰 Экономика</button>
+      <button id="gt_rec" title="Что потребляют и выпускают заводы каждого типа">⚙ Механика заводов</button></div>
     <h3 class="sec">Просмотр глазами игрока</h3>
     <div class="hint" style="margin-top:0">Карта покажет ровно то, что видит выбранный игрок: чужие войска, скрытые месторождения и закрытые театры исчезнут. Выход - кнопка в красной полосе сверху.</div>
     ${data.players.length?`<label>Игрок</label><select id="gt_p">${data.players.map(p2=>`<option value="${p2.id}">${esc(p2.name)}</option>`).join("")}</select>
@@ -3416,9 +4097,12 @@ $("#btnTools").addEventListener("click",()=>{
     <h3 class="sec">Групповые действия</h3>
     <div class="hint" style="margin-top:0">Shift + протяжка мышью по карте выделяет всё в прямоугольнике: можно разом сменить державу, видимость, обученность или удалить.</div>
     <h3 class="sec">Горячие клавиши</h3>
-    <div class="hint">Ctrl+S сохранить · Ctrl+Z отменить · Ctrl+Y вернуть · Ctrl+D дублировать выбранное · Ctrl+F поиск · T театр · L линейка</div>
+    <div class="hint">Ctrl+S сохранить · Ctrl+Z отменить · Ctrl+Y вернуть · Ctrl+D дублировать выбранное · Ctrl+F поиск · T театр · L линейка · Shift+F к выбранному</div>
   `,[["Закрыть","primary",closeModal]]);
   m.querySelector("#gt_search").onclick=()=>{closeModal();openSearch();};
+  m.querySelector("#gt_year").onclick=()=>{closeModal();confirmYear();};
+  m.querySelector("#gt_econ").onclick=()=>{closeModal();openEconPanel();};
+  m.querySelector("#gt_rec").onclick=()=>{closeModal();openRecipes();};
   m.querySelector("#gt_dice").onclick=()=>{closeModal();openDice();};
   m.querySelector("#gt_ruler").onclick=()=>{closeModal();setTool("ruler");};
   const pv=m.querySelector("#gt_prev");
@@ -3429,16 +4113,30 @@ $("#btnTools").addEventListener("click",()=>{
    ПОМОЩЬ
    ============================================================= */
 $("#btnReset").addEventListener("click",()=>{
-  layers={borders:true,cities:true,divisions:true,structures:true,deposits:true,rails:true,roads:true,zones:true,arrows:true,legend:false,labels:true,radii:false,edgeScroll:true,snap:true,autoWeld:true,countryNames:true,hideFar:true,war:true,control:true};
-  drawing=null; railDraft=null; roadDraft=null; zoneDraft=null; arrowDraft=null; band=null; selection=null; closeInspector();
+  layers={...DEF_LAYERS};
+  drawing=null; railDraft=null; roadDraft=null; zoneDraft=null; arrowDraft=null; theatreDraft=null; band=null; selection=null; closeInspector();
+  window.__redrawTarget=window.__zoneTarget=window.__theatreTarget=window.__extend=null;
+  showMini();
   document.querySelectorAll(".gm-only").forEach(el=>el.style.removeProperty("display"));
   document.body.classList.toggle("is-gm",!!role?.gm);
   setTool("select"); zoomFit(); render();
   toast("Интерфейс восстановлен");
 });
 $("#btnHelp").addEventListener("click",()=>{
-  openModal("Помощь · v3.0",`
-    <h3 class="sec" style="margin-top:0">Что нового в v3.0</h3>
+  openModal("Помощь · v"+APP_VER,`
+    <h3 class="sec" style="margin-top:0">Что нового в v3.1</h3>
+    <div class="hint">
+      · Экономика государств (💰 в верхней панели). В карточке провинции ГМ ставит добывающие точки (название, ресурс, добыча в год) и строит предприятия любого типа — списком, с количеством. Месторождения на карте тоже дают добычу.<br>
+      · Все ресурсы государства сходятся в пул в «столице экономики»: провинции со столичным городом, самой крупной провинции или той, которую ГМ отметил сам. На карте она помечена значком ◈, а пул виден в её карточке. Пул видят только ГМ и игрок этого государства.<br>
+      · Ресурсы поделены на промышленные и военные. Для каждого видно: текущий запас, итог за год (прибавка или убыль после всех вычислений) и необходимое снабжение. Наведи на ресурс — окошко покажет, откуда он приходит, куда уходит и как считается итог.<br>
+      · Заводы сами считают выработку: сколько сырья потребляют и что выпускают за год. Цифры цепочек правятся в «Механике заводов». Выпуск оружейных, артиллерийских, автомобильных и танковых заводов попадает прямо в снаряжение страны.<br>
+      · Модификаторы в процентах к выработке ресурса, постоянные прибавки и убыли (торговля, дань, особые приросты), снабжение по каждому ресурсу — всё в окне экономики, пересчитывается на лету.<br>
+      · «⏭ Прошёл год» (Инструменты или окно экономики): итог года ложится в запасы всех государств, нехватки пишутся в журнал лет. Всё это сохраняется в файле партии и попадает в сборку игрока — только по его государству.<br>
+      · Навигация: плавное приближение колесом и щипком на тачпаде, двойной клик — приблизить к точке (Shift — отдалить), кнопки масштаба в правом нижнем углу, миникарта (N), стрелки клавиатуры, пробел или средняя кнопка мыши — панорама при любом инструменте, Shift+F — перелёт к выбранному объекту, щипок двумя пальцами на сенсорном экране.<br>
+      · Провинция под курсором подсвечивается, в правом верхнем углу карты появляется карточка с её названием и государством. У каждой кнопки — маленькая всплывающая подсказка.<br>
+      · Исправлено: удаление с отменой в окне подтверждения больше не засоряет историю; «Продолжить» у ветки, дороги или стрелки больше не теряет объект по Esc; после Esc при перерисовке контура новая провинция не затирает старую; Ctrl+C / Ctrl+V / Ctrl+A больше не переключают инструменты; Ctrl+Z в поле ввода отменяет набор текста, а не действие на карте; перетаскивание значков, вершин и новые ветки отменяются через Ctrl+Z и помечают файл несохранённым; изменения в Настройках помечают файл несохранённым и не стираются при добавлении игрока; удалённое государство и игрок не остаются висеть в объектах; пометка «не в снимок» у городов и месторождений больше не пропадает при загрузке; размер дорог настраивается в Настройках.<br>
+    </div>
+    <h3 class="sec">v3.0</h3>
     <div class="hint">
       · Стрелки (➜, клавиша G): клики ставят точки, Enter заканчивает. Настраиваются цвет, толщина, характер линии, наконечник на конце или с обеих сторон, сглаживание изломов. Подпись ложится вдоль стрелки у её середины и сдвинута в сторону от линии, так что не садится на саму стрелку. «Продолжить» достраивает существующую, «Развернуть» меняет направление вместе с наконечником.<br>
       · Рамка (▭, клавиша B): протяни рамку по карте, как по рабочему столу, и задай общие свойства всему, что в неё попало — державу, видимость, попадание в снимок, обученность, качество, род войск, численность. Там же массовое переименование по шаблону: знак # подставляет порядковый номер, так что «# рота 4й мотострелковой» разом пронумерует десяток значков. Рамка работает и по Shift с обычным выбором.<br>
@@ -3500,7 +4198,8 @@ $("#btnHelp").addEventListener("click",()=>{
       · Сшивка границ: при рисовании и правке провинции её вершины сами притягиваются к соседним, а на стыках добавляются узлы. Для старых карт есть Настройки → Границы → «Сшить все границы» с отменой.<br>
       · При отдалении карты значки и подписи скрываются, а поверх границ проступают названия стран.<br>
       · Панель «🏛 Страна» (только ГМ): общие запасы ресурсов и снаряжения, сверка с суммами по провинциям и дивизиям, шаблоны штата дивизий и распределение снаряжения поровну.<br>
-      · Штат соблюдается строго: чего нет в шаблоне, того нельзя ни вписать, ни раздать; в панели страны есть массовая выдача обученности.<br>\n      · У дивизий появились обученность и оснащение по видам с лимитами из шаблона; игрок правит текущее оснащение своих соединений, лимиты ставит ГМ.<br>
+      · Штат соблюдается строго: чего нет в шаблоне, того нельзя ни вписать, ни раздать; в панели страны есть массовая выдача обученности.<br>
+      · У дивизий появились обученность и оснащение по видам с лимитами из шаблона; игрок правит текущее оснащение своих соединений, лимиты ставит ГМ.<br>
       · Карта сама едет, когда курсор подходит к краю экрана (выключается в «Слоях»).<br>
       · Ресурсы вносятся отдельными полями (уголь, сталь, каучук и прочее) и показываются таблицей в карточке провинции.<br>
       · Значки дивизий, городов и построек заданы в единицах карты и уменьшаются вместе с ней; их размер настраивается в Настройках → «Размер обозначений». Подписи провинций убраны.<br>
@@ -3510,14 +4209,161 @@ $("#btnHelp").addEventListener("click",()=>{
     <div class="hint">
       1. Настройки → подключи основную карту (JPEG/WebP в 10–30 МБ летает быстрее, чем PNG 200 МБ).<br>
       2. Заведи государства и игроков с кодами.<br>
-      3. ⬠ провинции · ◉ города · ▣ дивизии · ✈ постройки. Всё редактируется в панели справа.<br>
+      3. ⬠ провинции · ◉ города · ▣ дивизии · ✈ постройки. Всё редактируется в панели справа. В карточке провинции — добывающие точки и предприятия.<br>
+      3а. 💰 Экономика: запасы, снабжение, модификаторы и прибавки государств; ⏭ «Прошёл год» в конце игрового года.<br>
       4. «Сохранить» — мастер-файл. «Сборка игроку» — персональный файл со срезанным скрытым.<br>
       5. Игроку отправь: этот HTML + его сборку + файлы карт.
     </div>
     <h3 class="sec">Горячие клавиши</h3>
-    <div class="hint">V выбор · P провинция · C город · D дивизия · A постройка · M месторождение · R железная дорога · T театр · L линейка · F вся карта · Enter замкнуть · Backspace убрать точку · Esc отмена · Delete удалить</div>
+    <div class="hint">V выбор · P провинция · C город · D дивизия · A постройка · M месторождение · R железная дорога · O дорога · Z штриховая область · G стрелка · T театр · B рамка · L линейка<br>
+      F вся карта · Shift+F к выбранному · + / − масштаб · стрелки — прокрутка (Shift — быстрее) · пробел + мышь — панорама · N миникарта · двойной клик — приблизить<br>
+      Enter замкнуть · Backspace убрать точку · Esc отмена / закрыть окно · Delete удалить · Ctrl+S сохранить · Ctrl+Z / Ctrl+Y отменить / вернуть · Ctrl+D копия · Ctrl+F поиск</div>
   `,[["Понятно","primary",closeModal]]);
 });
+
+/* =============================================================
+   ПОДСКАЗКИ: маленькое окошко у элемента вместо системного title
+   ============================================================= */
+const tipEl=document.createElement("div"); tipEl.id="tip"; document.body.appendChild(tipEl);
+let tipFor=null,_tipT=0,tipXY=[0,0];
+document.addEventListener("pointermove",e=>{tipXY=[e.clientX,e.clientY];},{passive:true});
+function hideTip(){clearTimeout(_tipT);tipFor=null;tipEl.classList.remove("on");}
+function showTip(el){
+  if(!el.isConnected||tipFor!==el)return;
+  let html="";
+  if(el.dataset.tipres){const [nid,k]=el.dataset.tipres.split("|"); html=resTipHtml(nid,k);}
+  else{
+    const t=el.dataset.tip||"", m=t.match(/^(.*?)\s*\(([^()]{1,8})\)(.*)$/s);
+    html=m?esc(m[1])+`<kbd>${esc(m[2])}</kbd>`+esc(m[3]):esc(t);
+  }
+  if(!html)return;
+  tipEl.innerHTML=html; tipEl.classList.add("on");
+  const r=el.getBoundingClientRect(), w=tipEl.offsetWidth, h=tipEl.offsetHeight;
+  let x=r.left+r.width/2-w/2, y=r.bottom+8;
+  if(el.closest("#toolbar")){x=r.right+10;y=r.top+r.height/2-h/2;}
+  else if(el.dataset.tipres){
+    /* строки таблицы широкие: окошко держится у курсора, чтобы не закрывать соседние строки */
+    x=tipXY[0]+18; y=tipXY[1]+16;
+    if(x+w>innerWidth-6)x=tipXY[0]-w-18;
+    if(y+h>innerHeight-6)y=Math.max(6,tipXY[1]-h-12);
+  }
+  if(y+h>innerHeight-6)y=r.top-h-8;
+  x=Math.max(6,Math.min(innerWidth-w-6,x)); y=Math.max(6,Math.min(innerHeight-h-6,y));
+  tipEl.style.left=x+"px"; tipEl.style.top=y+"px";
+}
+document.addEventListener("pointerover",e=>{
+  const el=e.target.closest?e.target.closest("[title],[data-tip],[data-tipres]"):null;
+  if(el&&el.hasAttribute("title")){ const t=el.getAttribute("title"); if(t)el.dataset.tip=t; el.removeAttribute("title"); }
+  if(el===tipFor)return;
+  hideTip();
+  if(!el||e.pointerType==="touch"||panState)return;
+  if(!el.dataset.tip&&!el.dataset.tipres)return;
+  tipFor=el; _tipT=setTimeout(()=>showTip(el),el.dataset.tipres?160:420);
+});
+document.addEventListener("pointerdown",hideTip,true);
+document.addEventListener("keydown",hideTip,true);
+document.addEventListener("wheel",hideTip,{passive:true,capture:true});
+
+/* =============================================================
+   КАРТОЧКА ПРОВИНЦИИ ПОД КУРСОРОМ
+   ============================================================= */
+let hoverProv=null,_hovRaf=0,_hovPt=null;
+function queueHover(x,y,t){
+  _hovPt=[x,y,t];
+  if(_hovRaf)return;
+  _hovRaf=requestAnimationFrame(()=>{
+    _hovRaf=0;
+    const [x,y,t]=_hovPt;
+    if(!data||!layers.borders||(t&&t.closest&&t.closest("#navbox,#minimap"))){setHover(null);return;}
+    let hit=null;
+    for(const q of data.provinces){
+      if(q.points.length<3||!canSee(q.vis,q.nationId))continue;
+      const b=pbox(q); if(x<b[0]||x>b[2]||y<b[1]||y>b[3])continue;
+      if(ptIn(q.points,x,y)){hit=q;break;}
+    }
+    setHover(hit?hit.id:null);
+  });
+}
+function setHover(id){ if(id===hoverProv)return; hoverProv=id; updateProvCard(); renderOverlayOnly(); }
+function updateProvCard(){
+  const el=$("#provCard"), p=hoverProv&&data?data.provinces.find(x=>x.id===hoverProv):null;
+  if(!p){el.classList.remove("on");return;}
+  const n=nation(p.nationId), eco=canSeeEconomy(p), cap=!!p.nationId&&eco&&econCap(p.nationId)?.id===p.id;
+  const fabN=(p.stats.fabs||[]).reduce((a,f)=>a+num(f.count),0), mineN=(p.stats.mines||[]).filter(m=>+m.amt).length;
+  el.style.borderLeftColor=n?n.color:"var(--line)";
+  el.innerHTML=`<h4>${esc(p.name)}</h4><div class="s"><i style="background:${n?n.color:"#777"}"></i>${n?esc(n.name):"ничейная территория"}`+
+    (p.stats.pop?`<br>Население: ${esc(p.stats.pop)}`:"")+
+    (eco&&(fabN||mineN)?`<br>Предприятий: ${fabN} · добывающих точек: ${mineN}`:"")+
+    (cap?`<br><span style="color:#e0c068">◈ столица экономики — здесь пул ресурсов</span>`:"")+
+    `<br><span style="opacity:.7">клик — подробнее</span></div>`;
+  el.classList.add("on");
+}
+vp.addEventListener("pointerleave",()=>setHover(null));
+
+/* =============================================================
+   НАВИГАЦИЯ: кнопки масштаба и миникарта
+   ============================================================= */
+$("#navIn").onclick=()=>zoomBy(1.6);
+$("#navOut").onclick=()=>zoomBy(1/1.6);
+$("#navFit").onclick=()=>zoomFit(true);
+$("#navSel").onclick=()=>{ if(!focusSelection())toast("Сначала выбери объект на карте"); };
+$("#navMini").onclick=()=>{layers.minimap=!layers.minimap;showMini();};
+$("#navbox").addEventListener("dblclick",e=>e.stopPropagation());
+const mini=$("#minimap"), mctx=mini.getContext("2d");
+let miniBase=null, miniVer=-1, _miniRaf=0, miniDrag=false;
+function buildMini(){
+  if(!mapLoaded||!layers.minimap)return;
+  const W=img.naturalWidth,H=img.naturalHeight,k=Math.min(200/W,150/H);
+  mini.width=Math.max(20,Math.round(W*k)); mini.height=Math.max(20,Math.round(H*k));
+  miniBase=document.createElement("canvas"); miniBase.width=mini.width; miniBase.height=mini.height;
+  const g=miniBase.getContext("2d");
+  try{ g.drawImage(shotBgEl("auto")||img,0,0,mini.width,mini.height); }catch(e){}
+  if(data&&role){
+    g.globalAlpha=0.38;
+    for(const p of data.provinces){
+      if(!p.nationId||p.points.length<3||!canSee(p.vis,p.nationId))continue;
+      const n=nation(p.nationId); if(!n)continue;
+      g.fillStyle=n.color; g.beginPath();
+      p.points.forEach((q,i)=>i?g.lineTo(q[0]*k,q[1]*k):g.moveTo(q[0]*k,q[1]*k));
+      g.closePath(); g.fill();
+    }
+    g.globalAlpha=1;
+  }
+  miniVer=borderVer; drawMini();
+}
+function drawMini(){
+  if(_miniRaf||!layers.minimap||!mapLoaded)return;
+  _miniRaf=requestAnimationFrame(()=>{
+    _miniRaf=0;
+    if(!miniBase||miniVer!==borderVer){buildMini();return;}
+    const k=mini.width/img.naturalWidth, r=vp.getBoundingClientRect();
+    mctx.clearRect(0,0,mini.width,mini.height); mctx.drawImage(miniBase,0,0);
+    const x=-view.x/view.s*k, y=-view.y/view.s*k, w=r.width/view.s*k, h=r.height/view.s*k;
+    mctx.fillStyle="rgba(201,162,90,.14)"; mctx.fillRect(x,y,w,h);
+    mctx.strokeStyle="#e8d9a8"; mctx.lineWidth=1.5; mctx.strokeRect(x+.5,y+.5,Math.max(2,w-1),Math.max(2,h-1));
+  });
+}
+function showMini(){
+  mini.style.display=layers.minimap&&mapLoaded?"block":"none";
+  $("#navMini").classList.toggle("primary",!!layers.minimap);
+  if(layers.minimap)buildMini();
+}
+function miniGo(e,smooth){
+  const r=mini.getBoundingClientRect(), k=img.naturalWidth/r.width;
+  const x=(e.clientX-r.left)*k, y=(e.clientY-r.top)*k;
+  if(smooth){flyTo(x,y,view.s,260);return;}
+  fly=null; zAnim=null;
+  const vr=vp.getBoundingClientRect();
+  view.x=vr.width/2-x*view.s; view.y=vr.height/2-y*view.s; applyView(); setMoving(true); schedulePanRedraw();
+}
+mini.addEventListener("pointerdown",e=>{e.stopPropagation(); if(!mapLoaded)return; mini.setPointerCapture(e.pointerId); miniDrag=false; mini._down=[e.clientX,e.clientY];});
+mini.addEventListener("pointermove",e=>{
+  if(!mini._down)return;
+  if(!miniDrag&&Math.abs(e.clientX-mini._down[0])+Math.abs(e.clientY-mini._down[1])>3)miniDrag=true;
+  if(miniDrag)miniGo(e,false);
+});
+mini.addEventListener("pointerup",e=>{ if(mini._down&&!miniDrag)miniGo(e,true); if(miniDrag)render(); mini._down=null; miniDrag=false; });
+mini.addEventListener("wheel",e=>{e.stopPropagation();e.preventDefault();zoomBy(e.deltaY<0?1.4:1/1.4);},{passive:false});
 
 /* =============================================================
    ВХОД
@@ -3529,7 +4375,7 @@ function applyRole(){
   $("#roleBadge").textContent=role.gm?"ГМ · полный допуск":`Игрок: ${player(role.playerId)?.name||"?"}`;
 }
 function startApp(){
-  bumpBorders();
+  bumpBorders(); undoStack.length=0; redoStack.length=0; markClean();
   applyRole();applyView();render();setTool("select");
   const hints=Object.entries(data.meta.underlayHints||{}).map(([k,v])=>`${MODES.find(m=>m[0]===k)?.[1]}: ${v}`).join(" · ");
   toast(role.gm?"Добро пожаловать, ГМ. На все воля твоя.":"Допуск подтверждён");
@@ -3540,7 +4386,7 @@ function loginScreen(){
     <div id="login">
       <div class="stamp"><div class="frame">
         <div class="big">ВПИ</div>
-        <div class="small">Штабная карта · v2.7 · допуск по коду</div>
+        <div class="small">Штабная карта · v${APP_VER} · допуск по коду</div>
       </div></div>
       <button class="bigbtn" id="lg_new">Новая партия (ГМ)<small>Чистый стол: карта, государства, игроки — с нуля</small></button>
       <button class="bigbtn" id="lg_load">Загрузить файл партии<small>Мастер-файл ГМа или персональная сборка игрока · сохранения v1.0 совместимы</small></button>

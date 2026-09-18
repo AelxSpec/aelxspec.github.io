@@ -11,6 +11,8 @@
 - Видимость: `vis` = `"all" | "gm" | "owner" | [playerId…]`, проверка `canSee()` в UI и `filterForPlayer()` при выгрузке сборки. Секретность обеспечивает только сборка — при добавлении новых сущностей их надо фильтровать и там.
 - Отрисовка: два SVG-слоя — `#overlay` (база, `drawBase()`) и `#overlay2` (оверлей, `drawOverlay()`); планировщик `render()` / `renderOverlayOnly()`. Кэши: `bumpBorders()` для границ, `bumpWar()` для фронтов.
 - Правки данных: перед изменением `snapshot()` (undo), после — `markDirty()`.
+- Экономика (v3.1): `data.econ` = `{year, recipes, nat:{[nid]:{cap,mods,need,adds}}, log}`; в провинции `stats.mines` (добывающие точки) и `stats.fabs` (предприятия). Расчёт — `econCalc(nid)`, столица пула — `econCap(nid)`, запасы — `stockGet/stockSet` (оружие и техника лежат в `data.stocks.eq`, прочее в `data.stocks.res`). Цепочки заводов по умолчанию — `DEF_RECIPES` (заготовка, ГМ правит в «Механике заводов»).
+- Всплывающие подсказки: любой `title` автоматически превращается в маленькое окошко (`#tip`); `data-tipres="nid|res"` — справка по ресурсу.
 
 ## Запуск
 
