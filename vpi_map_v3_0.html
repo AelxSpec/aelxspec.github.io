@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>ВПИ · Штабная карта · v3.1</title>
+<title>ВПИ · Штабная карта · v3.2</title>
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><rect width='64' height='64' rx='10' fill='%231c1f26'/><rect x='3.5' y='3.5' width='57' height='57' rx='8' fill='none' stroke='%238a7340' stroke-width='2'/><path d='M32 8 L37 27 L56 32 L37 37 L32 56 L27 37 L8 32 L27 27 Z' fill='%23c9a25a'/><path d='M32 8 L37 27 L32 32 Z' fill='%23e8d9a8'/><circle cx='32' cy='32' r='8.5' fill='%2314161a' stroke='%23c9a25a' stroke-width='2'/><text x='32' y='37.5' font-family='Georgia,serif' font-size='12' font-weight='bold' text-anchor='middle' fill='%23e8d9a8'>&#x412;</text></svg>">
 <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><rect width='64' height='64' rx='10' fill='%231c1f26'/><rect x='3.5' y='3.5' width='57' height='57' rx='8' fill='none' stroke='%238a7340' stroke-width='2'/><path d='M32 8 L37 27 L56 32 L37 37 L32 56 L27 37 L8 32 L27 27 Z' fill='%23c9a25a'/><path d='M32 8 L37 27 L32 32 Z' fill='%23e8d9a8'/><circle cx='32' cy='32' r='8.5' fill='%2314161a' stroke='%23c9a25a' stroke-width='2'/><text x='32' y='37.5' font-family='Georgia,serif' font-size='12' font-weight='bold' text-anchor='middle' fill='%23e8d9a8'>&#x412;</text></svg>">
 <meta name="theme-color" content="#1c1f26">
@@ -308,10 +308,11 @@
    общий пул ресурсов в столице, модификаторы, прибавки, снабжение,
    «Прошёл год». Плавная навигация, подсказки, карточка провинции.
    ============================================================= */
-const APP_VER="3.1", DATA_VER=6;
+const APP_VER="3.2", DATA_VER=7;
 
 /* экономика: ключ, название, группа (ind — промышленные, mil — военные) */
 const ECON_RES = [
+  ["money","Деньги","fin"],
   ["iron","Железная руда","ind"],["alumore","Алюминиевая руда","ind"],["coal","Уголь","ind"],
   ["oil","Нефть","ind"],["wood","Древесина","ind"],["rubber","Каучук","ind"],["gold","Золото","ind"],
   ["steel","Сталь","ind"],["alum","Алюминий","ind"],["build","Стройматериалы","ind"],
@@ -320,25 +321,45 @@ const ECON_RES = [
   ["rifle","Винтовки","mil"],["art","Орудия","mil"],["gear","Доп. оснащение","mil"],["truck","Машины","mil"],
   ["tank","Танки","mil"],["expl","Взрывчатка","mil"],["ship","Корабли","mil"],["plane","Самолёты","mil"]
 ];
-const ECON_GROUPS = [["ind","Промышленные"],["mil","Военные"]];
+const ECON_GROUPS = [["fin","Казна"],["ind","Промышленные"],["mil","Военные"]];
 const resName = k => ECON_RES.find(r=>r[0]===k)?.[1]||k;
 /* что можно добывать на добывающей точке */
 const RAW_RES = ["iron","alumore","coal","oil","wood","rubber","gold"];
 /* совместимость со старым кодом и сверкой: только сырьё и полуфабрикаты */
 const RESOURCES = ECON_RES.filter(r=>r[2]==="ind"&&!/^goods/.test(r[0])).map(r=>[r[0],r[1]]);
-/* производственные цепочки по умолчанию: сколько завод потребляет и выпускает за год.
-   Это заготовка — ГМ правит цифры в «💰 Экономика → Механика заводов». */
+/* производственные цепочки по правилам партии: сколько одно предприятие потребляет и выпускает за год.
+   Выпуск самолётов, танков, кораблей, станков, взрывчатки и ТНП правилами пока не задан — стоят заготовки.
+   ГМ правит цифры в «💰 Экономика → Механика заводов». */
 const DEF_RECIPES = {
-  steel:{in:{iron:2,coal:1},out:{steel:2}},      alum:{in:{alumore:2,coal:1},out:{alum:1}},
-  build:{in:{wood:1,coal:1},out:{build:2}},      refinery:{in:{oil:2},out:{fuel:2}},
-  tools:{in:{steel:1,alum:1},out:{tools:1}},     auto:{in:{steel:2,rubber:1},out:{truck:20}},
-  arms:{in:{steel:1,wood:1},out:{rifle:500}},    artf:{in:{steel:2},out:{art:20}},
-  gearf:{in:{steel:1,rubber:1},out:{gear:200}},  chem:{in:{coal:1,oil:1},out:{expl:2}},
-  shipyard:{in:{steel:4,fuel:1},out:{ship:1}},   aircraft:{in:{alum:2,steel:1,fuel:1},out:{plane:5}},
-  tankf:{in:{steel:3,rubber:1,fuel:1},out:{tank:5}},
-  cons1:{in:{wood:1},out:{goods1:2}},            cons2:{in:{steel:1,wood:1},out:{goods2:1}},
+  steel:{in:{iron:10,coal:4},out:{steel:10}},             alum:{in:{alumore:10,coal:4},out:{alum:10}},
+  build:{in:{wood:10},out:{build:10}},                     refinery:{in:{oil:10,coal:2},out:{fuel:12}},
+  arms:{in:{steel:4,coal:4},out:{rifle:40000}},            artf:{in:{steel:6,coal:6},out:{art:500}},
+  gearf:{in:{steel:3},out:{gear:10000}},                   auto:{in:{steel:6,coal:4,oil:2,rubber:1},out:{truck:500}},
+  aircraft:{in:{steel:6,alum:5,coal:4,oil:4,rubber:1},out:{plane:5}},
+  tankf:{in:{steel:10,coal:7,oil:5},out:{tank:5}},         shipyard:{in:{steel:5,coal:6,oil:10},out:{ship:1}},
+  tools:{in:{steel:1,alum:1},out:{tools:1}},               chem:{in:{coal:1,oil:1},out:{expl:2}},
+  cons1:{in:{wood:1},out:{goods1:2}},                      cons2:{in:{steel:1,wood:1},out:{goods2:1}},
   cons3:{in:{alum:1,tools:1},out:{goods3:1}}
 };
+/* цепочки v3.1 (заготовка): при загрузке заменяются правилами, если ГМ их не менял */
+const OLD_RECIPES_V1 = {
+  steel:{in:{iron:2,coal:1},out:{steel:2}}, alum:{in:{alumore:2,coal:1},out:{alum:1}},
+  build:{in:{wood:1,coal:1},out:{build:2}}, refinery:{in:{oil:2},out:{fuel:2}},
+  auto:{in:{steel:2,rubber:1},out:{truck:20}}, arms:{in:{steel:1,wood:1},out:{rifle:500}},
+  artf:{in:{steel:2},out:{art:20}}, gearf:{in:{steel:1,rubber:1},out:{gear:200}},
+  shipyard:{in:{steel:4,fuel:1},out:{ship:1}}, aircraft:{in:{alum:2,steel:1,fuel:1},out:{plane:5}},
+  tankf:{in:{steel:3,rubber:1,fuel:1},out:{tank:5}}
+};
+/* стоимость постройки: ТНП, тяжёлая промышленность (с НПЗ), военные заводы и верфи, аэродром */
+const FAC_CAT = {cons1:"cons",cons2:"cons",cons3:"cons",
+  steel:"heavy",alum:"heavy",build:"heavy",refinery:"heavy",tools:"heavy",chem:"heavy",
+  arms:"mil",artf:"mil",gearf:"mil",auto:"mil",tankf:"mil",aircraft:"mil",shipyard:"mil"};
+const COST_CATS = [["cons","Фабрики ТНП"],["heavy","Тяжёлая промышленность"],["mil","Военные заводы и верфи"],["air","Аэродром"]];
+const DEF_COSTS = {cons:{money:1,build:15},heavy:{money:2,build:20},mil:{money:3,build:25},air:{money:1}};
+/* штат дивизий по правилам, если в «Стране» для типа не задан свой шаблон;
+   доп. оснащение: 1к на дивизию + 0,2к за каждую доп. роту */
+const DEF_STAFF = {inf:{men:10000,rifle:10000,gear:1000},art:{men:6000,art:200,gear:1000}};
+const GEAR_PER_CO = 200;
 const DIV_TYPES = [
   ["inf","Пехота","✕"],["mot","Мотопехота","МП"],["mil","Ополчение","ОП"],["cav","Кавалерия","／"],
   ["art","Артиллерия","•"],["tank","Танки","⬭"],["fleet","Флот","⚓"],
@@ -491,7 +512,7 @@ function migrate(d){
   d.cities=(d.cities||[]).map(c=>({id:c.id||uid(),name:c.name||"Город",x:c.x||0,y:c.y||0,size:c.size||"city",vis:c.vis??"all",noShot:!!c.noShot}));
   d.divisions=(d.divisions||[]).map(x=>({id:x.id||uid(),name:x.name||"Дивизия",type:x.type||"inf",x:x.x||0,y:x.y||0,
     nationId:x.nationId||null,strength:x.strength||"",training:x.training||"средняя",
-    quality:x.quality||"none", eq:x.eq||{}, ships:x.ships||{}, vis:x.vis??"owner"}));
+    quality:x.quality||"none", eq:x.eq||{}, ships:x.ships||{}, extraCo:Math.max(0,+x.extraCo||0), vis:x.vis??"owner"}));
   /* авиация перестала быть соединением: старые авиакрылья становятся аэродромами */
   const legacyAir=d.divisions.filter(x=>x.type==="air");
   if(legacyAir.length){
@@ -539,6 +560,16 @@ function migrate(d){
     nat[k]={cap:v?.cap||null,mods:v?.mods||{},need:v?.need||{},adds:Array.isArray(v?.adds)?v.adds.map(a=>({id:a.id||uid(),res:a.res||"coal",amt:+a.amt||0,note:a.note||""})):[]};
   e.nat=nat;
   e.log=Array.isArray(e.log)?e.log:[];
+  /* v3.2: заготовки v3.1, которые ГМ не трогал, заменяются правилами партии */
+  if((+e.rv||1)<2){
+    for(const [k,r] of Object.entries(OLD_RECIPES_V1))
+      if(JSON.stringify(e.recipes[k])===JSON.stringify(r)) e.recipes[k]=JSON.parse(JSON.stringify(DEF_RECIPES[k]));
+    e.rv=2;
+  }
+  const co=JSON.parse(JSON.stringify(DEF_COSTS));
+  for(const [k,v] of Object.entries(e.costs||{})) co[k]={...v};
+  e.costs=co;
+  e.chargeBuild=e.chargeBuild!==false;
   return d;
 }
 const nation=id=>data.nations.find(n=>n.id===id);
@@ -604,6 +635,26 @@ function econCap(nid){
   return best;
 }
 const facLabel=t=>{const f=FACTORIES.find(x=>x[0]===t);return f?f[2]+" "+f[1]:t;};
+/* ---- стоимость постройки ---- */
+const costOf=cat=>data.econ.costs?.[cat]||{};
+const costText=c=>Object.entries(c||{}).filter(([,v])=>+v).map(([k,v])=>k==="money"?fmtN(v)+">":fmtN(v)+" "+resName(k).toLowerCase()).join(" + ")||"бесплатно";
+const costMul=(c,n)=>Object.fromEntries(Object.entries(c||{}).map(([k,v])=>[k,(+v||0)*n]));
+const facInfo=t=>recipeText(t)+" · постройка: "+costText(costOf(FAC_CAT[t]));
+/* хватает ли запасов; при нехватке — подсказка, как строить бесплатно */
+function affordable(nid,c,what){
+  if(!data.econ.chargeBuild||!nid)return true;
+  const lack=Object.entries(c||{}).filter(([k,v])=>+v&&stockGet(nid,k)<+v).map(([k,v])=>resName(k).toLowerCase()+" "+fmtN(+v-stockGet(nid,k)));
+  if(!lack.length)return true;
+  toast(`Не хватает на ${what}: ${lack.join(", ")}. Сними галочку «Платно», чтобы строить бесплатно.`);
+  return false;
+}
+/* списать стоимость; true — если что-то списано */
+function payCost(nid,c){
+  if(!data.econ.chargeBuild||!nid)return false;
+  let any=false;
+  for(const [k,v] of Object.entries(c||{})) if(+v){stockSet(nid,k,rnd(stockGet(nid,k)-v));any=true;}
+  return any;
+}
 const recipeText=t=>{
   const r=data.econ.recipes[t]; if(!r)return "";
   const side=o=>Object.entries(o||{}).filter(([,q])=>+q).map(([k,q])=>fmtN(q)+" "+resName(k).toLowerCase()).join(", ");
@@ -814,7 +865,7 @@ vp.addEventListener("pointerdown",e=>{
   }
   if(tool==="division"&&role.gm&&e.button===0){
     const [x,y]=toWorld(e.clientX,e.clientY);
-    const d={id:uid(),name:"1-я дивизия",type:"inf",x:Math.round(x),y:Math.round(y),nationId:data.nations[0]?.id||null,strength:"",training:"средняя",quality:"none",eq:{},vis:"owner"};
+    const d={id:uid(),name:"1-я дивизия",type:"inf",x:Math.round(x),y:Math.round(y),nationId:provinceAt(x,y)?.nationId||data.nations[0]?.id||null,strength:"",training:"средняя",quality:"none",eq:{},extraCo:0,vis:"owner"};
     snapshot(true); markDirty(); data.divisions.push(d); bumpWar(); setTool("select"); select("division",d.id); return;
   }
   if(tool==="deposit"&&role.gm&&e.button===0){
@@ -865,9 +916,16 @@ vp.addEventListener("pointerdown",e=>{
   }
   if(tool==="structure"&&role.gm&&e.button===0){
     const [x,y]=toWorld(e.clientX,e.clientY);
-    const s={id:uid(),name:"Аэродром",type:"air",x:Math.round(x),y:Math.round(y),nationId:data.nations[0]?.id||null,
+    /* аэродром строится за счёт государства, которому принадлежит провинция */
+    const pv=provinceAt(x,y), payer=pv?.nationId||null, cost=costOf("air");
+    if(payer&&!affordable(payer,cost,"аэродром"))return;
+    const s={id:uid(),name:"Аэродром",type:"air",x:Math.round(x),y:Math.round(y),nationId:payer||data.nations[0]?.id||null,
       radius:(data.meta.defRadius?.air||150),planes:{},notes:"",vis:"all"};
-    snapshot(true); markDirty(); data.structures.push(s); setTool("select"); select("structure",s.id); return;
+    snapshot(true); markDirty();
+    const paid=payer?payCost(payer,cost):false;
+    data.structures.push(s); setTool("select"); select("structure",s.id);
+    if(paid)toast(`Аэродром построен · списано ${costText(cost)} у «${nation(payer)?.name||""}»`);
+    return;
   }
   if(e.shiftKey&&role.gm&&tool==="select"){
     const [x,y]=toWorld(e.clientX,e.clientY);
@@ -1140,11 +1198,17 @@ function getTemplate(nid,type,create){
   return t;
 }
 function tplDefined(t){ return !!t && EQUIP.some(([k])=>num(t.limits?.[k])>0); }
+/* штат соединения: свой шаблон страны, иначе штат по правилам (пехота, артиллерия) */
+function staffOf(d){
+  const t=getTemplate(d.nationId,d.type);
+  return tplDefined(t)?t.limits:(DEF_STAFF[d.type]||null);
+}
 /* null — штат не задан (без ограничений); 0 — не положено по штату; >0 — лимит */
 function divCap(d,key){
-  const t=getTemplate(d.nationId,d.type);
-  if(!tplDefined(t)) return null;
-  const v=num(t.limits[key]);
+  const L=staffOf(d);
+  if(!L) return null;
+  let v=num(L[key]);
+  if(key==="gear"&&v>0) v+=GEAR_PER_CO*(+d.extraCo||0);   /* +0,2к за каждую доп. роту */
   return v>0?v:0;
 }
 const capText = c => c===null ? "/ —" : (c>0 ? "/ "+c : "/ нет");
@@ -2248,6 +2312,10 @@ window.fieldChanged=()=>{
     const d=data.divisions.find(x=>x.id===s.id);if(!d)return;
     d.name=$("#f_name").value;d.nationId=$("#f_nation").value||null;d.type=$("#f_type").value;
     d.training=$("#f_train").value;d.quality=$("#f_qual").value;d.strength=$("#f_str").value;
+    if($("#f_xco")){
+      d.extraCo=Math.max(0,Math.round(+$("#f_xco").value||0));
+      const gi=document.querySelector('[data-eq="gear"]'); if(gi&&gi.nextElementSibling)gi.nextElementSibling.textContent=capText(divCap(d,"gear"));
+    }
     if($("#f_dshot"))d.noShot=$("#f_dshot").checked;
     d.vis=readVis("f_vis");
     writeEq(d); writeShips(d);
@@ -2430,10 +2498,11 @@ function provEconEditor(p){
       <input class="q" data-fab="${f.type}" type="number" min="0" step="1" value="${esc(f.count)}" oninput="fieldChanged()" title="Сколько таких предприятий">
       <button class="danger" onclick="delFab('${f.type}')" title="Снести предприятие">✕</button></div>`).join("")||'<div class="hint" style="margin-top:0">Предприятий нет.</div>'}
     <div class="rowx" style="margin-top:6px">
-      <select id="f_newfab" onchange="$('#f_newfabh').textContent=recipeText(this.value)">${FACTORIES.map(f=>`<option value="${f[0]}">${f[2]} ${f[1]}</option>`).join("")}</select>
+      <select id="f_newfab" onchange="$('#f_newfabh').textContent=facInfo(this.value)">${FACTORIES.map(f=>`<option value="${f[0]}">${f[2]} ${f[1]}</option>`).join("")}</select>
       <input class="q" id="f_newfabn" type="number" min="1" step="1" value="1" title="Сколько построить">
       <button class="primary" onclick="addFab()" title="Построить предприятие этого типа в провинции">+ Построить</button></div>
-    <div class="hint" id="f_newfabh" style="margin-top:2px">${esc(recipeText(FACTORIES[0][0]))}</div>
+    <div class="hint" id="f_newfabh" style="margin-top:2px">${esc(facInfo(FACTORIES[0][0]))}</div>
+    <div class="checkrow" title="Постройка списывает деньги и стройматериалы с запасов государства-владельца. Сними, чтобы расставлять уже существующие заводы бесплатно."><input type="checkbox" ${data.econ.chargeBuild?'checked':''} onchange="data.econ.chargeBuild=this.checked;markDirty()"> Платно: списывать стоимость постройки с запасов</div>
     <label>Примечание к промышленности</label><textarea id="f_fab" oninput="fieldChanged()">${esc(p.stats.fab)}</textarea>
     <div class="hint">Всё это видят только ГМ и государство-владелец. Наведи на предприятие — увидишь, что оно потребляет и выпускает. Цифры цепочек — «💰 Экономика → Механика заводов».</div>`;
 }
@@ -2467,10 +2536,13 @@ window.delMine=id=>{const p=selProv(); if(!p)return; snapshot(true); markDirty()
   p.stats.mines=(p.stats.mines||[]).filter(m=>m.id!==id); reIns();};
 window.addFab=()=>{const p=selProv(); if(!p)return;
   const t=$("#f_newfab").value, n=Math.max(1,Math.round(+$("#f_newfabn").value||1));
+  const cost=costMul(costOf(FAC_CAT[t]),n);
+  if(!affordable(p.nationId,cost,facLabel(t)+" ×"+n))return;
   snapshot(true); markDirty();
+  const paid=payCost(p.nationId,cost);
   const f=(p.stats.fabs=p.stats.fabs||[]).find(x=>x.type===t);
   if(f)f.count=String(num(f.count)+n); else p.stats.fabs.push({type:t,count:String(n)});
-  reIns(); toast(`Построено: ${facLabel(t)} ×${n}`);};
+  reIns(); toast(`Построено: ${facLabel(t)} ×${n}`+(paid?` · списано ${costText(cost)}`:""));};
 window.delFab=t=>{const p=selProv(); if(!p)return; snapshot(true); markDirty();
   p.stats.fabs=(p.stats.fabs||[]).filter(f=>f.type!==t); reIns();};
 window.setEconCap=on=>{const p=selProv(); if(!p||!p.nationId)return; snapshot(true); markDirty();
@@ -2559,6 +2631,7 @@ function renderInspector(){
         <label>Качество соединения</label><select id="f_qual" onchange="fieldChanged()">
           ${QUALITY.map(q=>`<option value="${q[0]}" ${(d.quality||"none")===q[0]?'selected':''}>${q[1]}${q[2]?" · "+"▲".repeat(q[2]):""}</option>`).join("")}
         </select>
+        <label>Доп. роты</label><input id="f_xco" type="number" min="0" step="1" value="${d.extraCo||0}" oninput="fieldChanged()" title="Каждая доп. рота добавляет к штату 0,2к доп. оснащения">
         ${d.type==="fleet"?`
         <h3 class="sec">Состав эскадры</h3>
         <div class="resgrid">
@@ -2569,7 +2642,7 @@ function renderInspector(){
         <div class="eqgrid">
           ${EQUIP.map(([k,n])=>{const c=divCap(d,k);return `<span${c===0?' style="color:var(--ink-dim)"':''}>${n}</span><input data-eq="${k}" value="${esc(d.eq[k]||"")}" oninput="fieldChanged()" placeholder="${c===0?'нет':'—'}" ${c===0?'disabled':''}><span class="lim">${capText(c)}</span>`;}).join("")}
         </div>
-        <div class="hint">Лимиты берутся из шаблона дивизии нации (панель «🏛 Страна»). Все соединения одного типа одной нации имеют одинаковые лимиты.</div>
+        <div class="hint">Лимиты берутся из шаблона дивизии нации (панель «🏛 Страна»). Без своего шаблона действует штат по правилам: пехота — 10к людей и 10к винтовок, артиллерия — 6к людей и 200 орудий; доп. оснащение — 1к на дивизию + 0,2к за каждую доп. роту.</div>
         <label>Заметки</label><textarea id="f_str" oninput="fieldChanged()">${esc(d.strength)}</textarea>
         <div class="checkrow"><input type="checkbox" id="f_dshot" ${d.noShot?'checked':''} onchange="fieldChanged()"> Не попадает в снимок карты</div>
         ${visSelector(d.vis,"f_vis",true)}
@@ -3638,8 +3711,9 @@ function openCountryPanel(){
     <label>Тип соединения</label>
     <select id="cp_type">${DIV_TYPES.map(t=>`<option value="${t[0]}" ${t[0]===panelTplType?'selected':''}>${t[1]}</option>`).join("")}</select>
     <div class="eqgrid" style="margin-top:8px">
-      ${EQUIP.map(([k,n])=>`<span>${n}</span><input data-tpl="${k}" value="${esc(tpl.limits[k]||"")}" placeholder="—"><span class="lim">штат</span>`).join("")}
+      ${EQUIP.map(([k,n])=>`<span>${n}</span><input data-tpl="${k}" value="${esc(tpl.limits[k]||"")}" placeholder="${DEF_STAFF[panelTplType]?.[k]??"—"}"><span class="lim">штат</span>`).join("")}
     </div>
+    ${DEF_STAFF[panelTplType]?`<div class="hint">Пустые поля — штат по правилам (серые цифры). Впиши хоть одно число, и шаблон страны заменит правила целиком. Доп. оснащение растёт на 0,2к за каждую доп. роту соединения.</div>`:""}
     <div class="hint">Один шаблон на тип соединения в стране: все её ${DIV_TYPES.find(t=>t[0]===panelTplType)?.[1].toLowerCase()} получают эти лимиты. Соединений этого типа сейчас: <b style="color:var(--brass)">${data.divisions.filter(d=>d.nationId===nid&&d.type===panelTplType).length}</b>.</div>
   `,[["Применить","primary",()=>{
     snapshot(true); savePanel(); markDirty(); closeModal(); render(); renderInspector(); toast("Данные страны сохранены");
@@ -3680,6 +3754,21 @@ $("#btnCountry").addEventListener("click",openCountryPanel);
    снабжение, провинции с предприятиями, журнал лет
    ============================================================= */
 let econNation=null, econShowAll=false;
+/* сколько дивизий можно сформировать из запасов государства */
+function formationHtml(nid){
+  const have=k=>k==="men"?num(data.stocks?.eq?.[nid]?.men):stockGet(nid,k);
+  const rows=[["inf","Пехотная дивизия"],["art","Артиллерийская дивизия"]].map(([t,n])=>{
+    const tpl=getTemplate(nid,t), L=tplDefined(tpl)?tpl.limits:DEF_STAFF[t];
+    const need=EQUIP.filter(([k])=>num(L[k])>0).map(([k,nm])=>[k,nm,num(L[k])]);
+    let cnt=Infinity, lim="";
+    for(const [k,nm,v] of need){ const c=Math.floor(have(k)/v); if(c<cnt){cnt=c;lim=nm;} }
+    if(!need.length)cnt=0;
+    return `<tr><td>${n}</td><td style="text-align:left;white-space:normal">${need.map(([k,nm,v])=>nm.toLowerCase()+" "+fmtN(v)).join(" + ")}</td>
+      <td class="${cnt>0?"plus":"dim"}">${cnt}</td><td style="text-align:left" class="dim">${lim?"упирается в: "+lim.toLowerCase():""}</td></tr>`;
+  }).join("");
+  return `<table class="pool"><tr><th>Соединение</th><th style="text-align:left">Штат</th><th>Можно сформировать</th><th style="text-align:left">Ограничение</th></tr>${rows}</table>
+    <div class="hint">По запасам государства: люди — из «🏛 Страна → Снаряжение», винтовки, орудия и доп. оснащение — из пула. Доп. оснащение: 1к на дивизию + 0,2к за каждую доп. роту.</div>`;
+}
 function afterEcon(){ const p=selProv(); if(p)refreshInsPool(p); }
 function openEconPanel(nid){
   if(!data)return;
@@ -3730,6 +3819,8 @@ function openEconPanel(nid){
         :`<div class="rowx"><span class="lbl">${esc(resName(a.res))} · ${esc(a.note||"прибавка")}</span><span class="io ${sgnC(a.amt)}" style="font-size:12px">${pmN(a.amt)}</span></div>`).join("")
         ||'<div class="hint">Нет.</div>'}</div>
       ${gm?`<div class="btnrow"><button id="ec_addadd">+ Прибавка / убыль</button></div>`:""}
+      <h3 class="sec">Формирование дивизий</h3>
+      <div id="ec_form">${formationHtml(nid)}</div>
       <h3 class="sec">Провинции и предприятия</h3>
       ${rowsP?`<table class="pool"><tr><th>Провинция</th><th style="text-align:left">Добыча в год</th><th style="text-align:left">Предприятия</th></tr>${rowsP}</table>`
         :`<div class="hint">В провинциях государства пока нет ни добычи, ни предприятий.${gm?" Они добавляются в карточке провинции.":""}</div>`}
@@ -3765,6 +3856,7 @@ function openEconPanel(nid){
     if(ev.type==="input"){snapshot();markDirty();}
     if(pool&&ev.type==="change") q("#ec_pool").innerHTML=poolTable(nid,{full:true,edit:gm,all:gm&&econShowAll});
     else refreshPool(q("#ec_pool"),nid);
+    q("#ec_form").innerHTML=formationHtml(nid);
     afterEcon();
   };
   body.addEventListener("input",onField); body.addEventListener("change",onField);
@@ -3821,10 +3913,17 @@ function openRecipes(after){
     +`<button data-ra="${t}|${sd}" style="padding:2px 9px" title="Добавить ресурс">+</button>`;
   const draw=()=>{
     const sc=body.scrollTop;
-    body.innerHTML=`<div class="hint" style="margin-top:0;margin-bottom:8px">Сколько одно предприятие потребляет и выпускает за год. Цифры сразу пересчитывают пулы всех государств. Это заготовка механики — подставь свои правила.</div>
+    body.innerHTML=`<h3 class="sec" style="margin-top:0">Стоимость постройки</h3>
+      <div class="checkrow"><input type="checkbox" id="rc_pay" ${data.econ.chargeBuild?'checked':''}> Списывать стоимость постройки с запасов государства</div>
+      <table class="pool" style="max-width:520px"><tr><th>Категория</th><th>Деньги ></th><th>Стройматериалы</th></tr>
+        ${COST_CATS.map(([c,n])=>`<tr><td>${n}</td>${["money","build"].map(k=>`<td><input type="number" min="0" step="any" data-cc="${c}|${k}" value="${esc(data.econ.costs[c]?.[k]??"")}" placeholder="0"></td>`).join("")}</tr>`).join("")}
+      </table>
+      <h3 class="sec">Производственные цепочки</h3>
+      <div class="hint" style="margin-top:0;margin-bottom:8px">Сколько одно предприятие потребляет и выпускает за год. Цифры сразу пересчитывают пулы всех государств. Выпуск самолётов, танков, кораблей, станков, взрывчатки и ТНП правилами пока не задан — стоят заготовки.</div>
       ${FACTORIES.map(f=>{
         const r=data.econ.recipes[f[0]]||(data.econ.recipes[f[0]]={in:{},out:{}}); r.in=r.in||{}; r.out=r.out||{};
-        return `<div class="rcard"><h4>${f[2]} ${f[1]}</h4><div class="cols">
+        const cat=COST_CATS.find(c=>c[0]===FAC_CAT[f[0]]);
+        return `<div class="rcard"><h4>${f[2]} ${f[1]} <span class="pill" style="font-family:var(--mono);margin-left:6px">${cat?cat[1]:"—"} · ${esc(costText(costOf(FAC_CAT[f[0]])))}</span></h4><div class="cols">
           <div><div class="cap">Потребляет</div>${side(f[0],"in")}</div>
           <div><div class="cap">Производит</div>${side(f[0],"out")}</div></div></div>`;}).join("")}
       <div class="btnrow"><button id="rc_def" class="danger">Вернуть цифры по умолчанию</button></div>`;
@@ -3838,6 +3937,9 @@ function openRecipes(after){
       snapshot(true);markDirty(); const v=o[k]; delete o[k]; o[t.value]=v; draw(); afterEcon();
     }
     if(t.dataset.rq){const [f,sd,k]=t.dataset.rq.split("|"); snapshot(true);markDirty(); data.econ.recipes[f][sd][k]=Math.max(0,+t.value||0); afterEcon();}
+    if(t.dataset.cc){const [c,k]=t.dataset.cc.split("|"); snapshot(true);markDirty();
+      const o=data.econ.costs[c]||(data.econ.costs[c]={}); const v=Math.max(0,+t.value||0); if(v)o[k]=v; else delete o[k]; draw();}
+    if(t.id==="rc_pay"){snapshot(true);markDirty(); data.econ.chargeBuild=t.checked;}
   });
   body.addEventListener("click",ev=>{
     const t=ev.target;
@@ -4124,7 +4226,14 @@ $("#btnReset").addEventListener("click",()=>{
 });
 $("#btnHelp").addEventListener("click",()=>{
   openModal("Помощь · v"+APP_VER,`
-    <h3 class="sec" style="margin-top:0">Что нового в v3.1</h3>
+    <h3 class="sec" style="margin-top:0">Что нового в v3.2</h3>
+    <div class="hint">
+      · Производственные цепочки по правилам партии: сталелитейный и алюминиевый заводы (10 руды + 4 угля → 10 металла), НПЗ (10 нефти + 2 угля → 12 топлива), фабрика стройматериалов (10 дерева → 10 стройматериалов), винтовок (4 стали + 4 угля → 40к), пушек (6 стали + 6 угля → 500), доп. оснащения (3 стали → 10к), автотранспортный (6 стали, 4 угля, 2 нефти, 1 каучук → 500 машин), самолётов, танков и верфь — по своим расходам. Выпуск самолётов, танков и кораблей пока заготовка — впиши в «Механике заводов».<br>
+      · Деньги (>) — новый ресурс казны. Постройка стоит: ТНП — 1> и 15 стройматериалов, тяжёлая промышленность и НПЗ — 2> и 20, военные заводы и верфи — 3> и 25, аэродром — 1>. Стоимость списывается с запасов государства-владельца провинции; галочка «Платно» в карточке провинции или в «Механике заводов» отключает списание, чтобы бесплатно расставить уже существующие заводы.<br>
+      · Штат по правилам: пехотная дивизия — 10к людей + 10к винтовок, артиллерийская — 6к людей + 200 орудий, доп. оснащение — 1к на дивизию + 0,2к за каждую доп. роту (поле «Доп. роты» в карточке соединения). Свой шаблон страны по-прежнему важнее правил.<br>
+      · В окне экономики — «Формирование дивизий»: сколько пехотных и артиллерийских дивизий можно собрать из запасов и во что это упирается.<br>
+    </div>
+    <h3 class="sec">v3.1</h3>
     <div class="hint">
       · Экономика государств (💰 в верхней панели). В карточке провинции ГМ ставит добывающие точки (название, ресурс, добыча в год) и строит предприятия любого типа — списком, с количеством. Месторождения на карте тоже дают добычу.<br>
       · Все ресурсы государства сходятся в пул в «столице экономики»: провинции со столичным городом, самой крупной провинции или той, которую ГМ отметил сам. На карте она помечена значком ◈, а пул виден в её карточке. Пул видят только ГМ и игрок этого государства.<br>
