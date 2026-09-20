@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>ВПИ · Штабная карта · v3.2</title>
+<title>ВПИ · Штабная карта · v3.3</title>
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><rect width='64' height='64' rx='10' fill='%231c1f26'/><rect x='3.5' y='3.5' width='57' height='57' rx='8' fill='none' stroke='%238a7340' stroke-width='2'/><path d='M32 8 L37 27 L56 32 L37 37 L32 56 L27 37 L8 32 L27 27 Z' fill='%23c9a25a'/><path d='M32 8 L37 27 L32 32 Z' fill='%23e8d9a8'/><circle cx='32' cy='32' r='8.5' fill='%2314161a' stroke='%23c9a25a' stroke-width='2'/><text x='32' y='37.5' font-family='Georgia,serif' font-size='12' font-weight='bold' text-anchor='middle' fill='%23e8d9a8'>&#x412;</text></svg>">
 <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><rect width='64' height='64' rx='10' fill='%231c1f26'/><rect x='3.5' y='3.5' width='57' height='57' rx='8' fill='none' stroke='%238a7340' stroke-width='2'/><path d='M32 8 L37 27 L56 32 L37 37 L32 56 L27 37 L8 32 L27 27 Z' fill='%23c9a25a'/><path d='M32 8 L37 27 L32 32 Z' fill='%23e8d9a8'/><circle cx='32' cy='32' r='8.5' fill='%2314161a' stroke='%23c9a25a' stroke-width='2'/><text x='32' y='37.5' font-family='Georgia,serif' font-size='12' font-weight='bold' text-anchor='middle' fill='%23e8d9a8'>&#x412;</text></svg>">
 <meta name="theme-color" content="#1c1f26">
@@ -211,6 +211,18 @@
   .rcard .cols{display:grid;grid-template-columns:1fr 1fr;gap:10px}
   .rcard .cap{color:var(--ink-dim);font-size:10px;text-transform:uppercase;letter-spacing:.05em;margin-bottom:3px}
   .econlog .plus{color:var(--green)} .econlog .minus{color:#d98f83}
+  .trow{display:flex;gap:8px;align-items:flex-start;border:1px solid var(--line);border-left:3px solid var(--line);
+    background:var(--panel2);padding:6px 9px;margin-bottom:5px;border-radius:2px}
+  .trow.done{border-left-color:var(--green)} .trow.open{border-left-color:var(--brass)} .trow.lock{opacity:.72}
+  .trow b{font-family:var(--serif);font-size:13px}
+  .trow .tm{flex:0 0 18px;text-align:center;font-size:13px;user-select:none}
+  .trow .s{font-size:10px;line-height:1.7;margin-top:2px;color:var(--ink-dim)}
+  .trow .dim{color:var(--ink-dim)}
+  .rq{display:inline-block;margin-right:7px;white-space:nowrap}
+  .ok{color:var(--green)} .no{color:#d98f83}
+  .tgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(270px,1fr));gap:0 10px}
+  .bar{height:6px;background:#15181d;border:1px solid var(--line);border-radius:3px;overflow:hidden;margin:3px 0}
+  .bar i{display:block;height:100%;background:var(--brass)}
   #toast{box-shadow:0 8px 24px rgba(0,0,0,.45);border-radius:3px}
 </style>
 </head>
@@ -233,6 +245,7 @@
     <span id="dirtyMark" style="color:var(--brass);font-size:11px;display:none">● не сохранено</span>
     <button id="btnSnapshot" title="Сохранить карту в изображение в полном разрешении">📷 Снимок</button>
     <button id="btnEcon" title="Экономика государства: запасы, добыча, заводы, баланс за год">💰 Экономика</button>
+    <button id="btnTech" title="Исследования: дерево технологий, военные возможности, указы НИЦ">🔬 Наука</button>
     <button id="btnExport" class="gm-only" title="Выгрузить персональный файл игрока — всё скрытое от него вырезано">📦 Сборка игроку</button>
     <button id="btnWar" class="gm-only" title="Театры военных действий: баланс сил, фронт, котлы">⚔ Война</button>
     <button id="btnTools" class="gm-only" title="Инструменты ГМа: поиск, кубик, взгляд игрока, «Прошёл год»">🧰 Инструменты</button>
@@ -308,7 +321,7 @@
    общий пул ресурсов в столице, модификаторы, прибавки, снабжение,
    «Прошёл год». Плавная навигация, подсказки, карточка провинции.
    ============================================================= */
-const APP_VER="3.2", DATA_VER=7;
+const APP_VER="3.3", DATA_VER=8;
 
 /* экономика: ключ, название, группа (ind — промышленные, mil — военные) */
 const ECON_RES = [
@@ -337,9 +350,9 @@ const DEF_RECIPES = {
   gearf:{in:{steel:3},out:{gear:10000}},                   auto:{in:{steel:6,coal:4,oil:2,rubber:1},out:{truck:500}},
   aircraft:{in:{steel:6,alum:5,coal:4,oil:4,rubber:1},out:{plane:5}},
   tankf:{in:{steel:10,coal:7,oil:5},out:{tank:5}},         shipyard:{in:{steel:5,coal:6,oil:10},out:{ship:1}},
-  tools:{in:{steel:1,alum:1},out:{tools:1}},               chem:{in:{coal:1,oil:1},out:{expl:2}},
-  cons1:{in:{wood:1},out:{goods1:2}},                      cons2:{in:{steel:1,wood:1},out:{goods2:1}},
-  cons3:{in:{alum:1,tools:1},out:{goods3:1}}
+  chem:{in:{coal:1,oil:1},out:{expl:2}},
+  cons1:{in:{wood:1},out:{goods1:1}},                      cons2:{in:{steel:1,wood:1},out:{goods2:1}},
+  cons3:{in:{alum:1},out:{goods3:1}}
 };
 /* цепочки v3.1 (заготовка): при загрузке заменяются правилами, если ГМ их не менял */
 const OLD_RECIPES_V1 = {
@@ -352,14 +365,117 @@ const OLD_RECIPES_V1 = {
 };
 /* стоимость постройки: ТНП, тяжёлая промышленность (с НПЗ), военные заводы и верфи, аэродром */
 const FAC_CAT = {cons1:"cons",cons2:"cons",cons3:"cons",
-  steel:"heavy",alum:"heavy",build:"heavy",refinery:"heavy",tools:"heavy",chem:"heavy",
+  steel:"heavy",alum:"heavy",build:"heavy",refinery:"heavy",chem:"heavy",
   arms:"mil",artf:"mil",gearf:"mil",auto:"mil",tankf:"mil",aircraft:"mil",shipyard:"mil"};
-const COST_CATS = [["cons","Фабрики ТНП"],["heavy","Тяжёлая промышленность"],["mil","Военные заводы и верфи"],["air","Аэродром"]];
-const DEF_COSTS = {cons:{money:1,build:15},heavy:{money:2,build:20},mil:{money:3,build:25},air:{money:1}};
+const COST_CATS = [["cons","Фабрики ТНП"],["heavy","Тяжёлая промышленность"],["mil","Военные заводы и верфи"],["air","Аэродром"],["res","Научный центр (НИЦ)"]];
+const DEF_COSTS = {cons:{money:1,build:15},heavy:{money:2,build:20},mil:{money:3,build:25},air:{money:1},res:{money:10}};
 /* штат дивизий по правилам, если в «Стране» для типа не задан свой шаблон;
    доп. оснащение: 1к на дивизию + 0,2к за каждую доп. роту */
 const DEF_STAFF = {inf:{men:10000,rifle:10000,gear:1000},art:{men:6000,art:200,gear:1000}};
 const GEAR_PER_CO = 200;
+
+/* =============================================================
+   ИССЛЕДОВАНИЯ
+   Дерево повторяет конструктор «tech-tree»: те же id, ветки,
+   тиры и условия — выгруженный им json подходит как есть.
+   Поля сверх конструктора: fx — что технология меняет в экономике,
+   buff — прибавка к атаке и защите, spd — скорость исследований.
+   Баффы не перемножаются, а складываются.
+   ============================================================= */
+const TECH_BR = [["base","Базовые"],["cap","Военные возможности"],["mil","Военные"],["ind","Промышленные"],["sci","Научные"],["civ","Гражданские"]];
+/* семейство возможностей: код, название, род войск на карте */
+const TECH_FAM = [["inf","Стрелковое оружие"],["art","Артиллерия"],["tank","Танки"],["air","Самолёты"],["navy","Корабли"]];
+const DIV_FAM = {inf:"inf",mot:"inf",mil:"inf",cav:"inf",art:"art",tank:"tank",fleet:"navy",hq:null};
+const TIER_STAT = {0:1,1:1.2,2:1.45,3:1.75,4:2.1};
+const TIER_STEP = 1.2;                       /* тиры выше Т4: каждый следующий ещё в 1,2 раза сильнее */
+const TECH_SPECIAL = {"#base":"все базовые технологии","#shipyard":"верфь в стране","#oil":"своя добыча нефти","#capT4":"все пять семейств до Т4"};
+const TECH_COST = {0:1,1:2,2:3,3:4,4:5,5:5}; /* сколько «очков» исследования нужно на тир */
+const TECHS = [
+{id:"electricity",br:"base",t:0,n:"Электричество",e:"Устойчивое энергоснабжение; без него фабрики свыше десятой работают с перебоями. Открывает ветку науки.",r:[],fx:{power:1}},
+{id:"machines",br:"base",t:0,n:"Базовые станки",e:"Право строить фабрики тяжёлой промышленности.",r:[],fx:{heavy:1}},
+{id:"rifles0",br:"base",t:0,n:"Межвоенные винтовки",e:"Даёт возможность: стрелковое оружие Т0.",r:[]},
+{id:"medicine",br:"base",t:0,n:"Базовая медицина",e:"Эпидобстановка не ниже «базовые меры»; +0.1% прироста населения.",r:[]},
+{id:"schools",br:"base",t:0,n:"Школы",e:"Бафф к видимому модификатору скорости исследований.",r:[],spd:{all:10}},
+{id:"art0",br:"base",t:0,n:"Межвоенная артиллерия",e:"Даёт возможность: артиллерия Т0.",r:["rifles0"]},
+{id:"conveyor",br:"base",t:0,n:"Конвейер",e:"+10% к выпуску военных фабрик.",r:["electricity","machines"],fx:{outMil:10}},
+
+{id:"cap_inf_0",br:"cap",f:"inf",t:0,n:"Стрелковое Т0",e:"",r:["rifles0"]},
+{id:"cap_inf_1",br:"cap",f:"inf",t:1,n:"Стрелковое Т1",e:"",r:["#base"]},
+{id:"cap_inf_2",br:"cap",f:"inf",t:2,n:"Стрелковое Т2",e:"",r:["metals"]},
+{id:"cap_inf_3",br:"cap",f:"inf",t:3,n:"Стрелковое Т3",e:"",r:["machines_adv"]},
+{id:"cap_inf_4",br:"cap",f:"inf",t:4,n:"Стрелковое Т4",e:"",r:["precision"]},
+{id:"cap_art_0",br:"cap",f:"art",t:0,n:"Артиллерия Т0",e:"",r:["art0"]},
+{id:"cap_art_1",br:"cap",f:"art",t:1,n:"Артиллерия Т1",e:"",r:["#base"]},
+{id:"cap_art_2",br:"cap",f:"art",t:2,n:"Артиллерия Т2",e:"",r:["metals"]},
+{id:"cap_art_3",br:"cap",f:"art",t:3,n:"Артиллерия Т3",e:"",r:["rolling"]},
+{id:"cap_art_4",br:"cap",f:"art",t:4,n:"Артиллерия Т4",e:"",r:["precision"]},
+{id:"cap_tank_1",br:"cap",f:"tank",t:1,n:"Танки Т1",e:"",r:["metals"]},
+{id:"cap_tank_2",br:"cap",f:"tank",t:2,n:"Танки Т2",e:"",r:["rubber"]},
+{id:"cap_tank_3",br:"cap",f:"tank",t:3,n:"Танки Т3",e:"",r:["machines_adv"]},
+{id:"cap_tank_4",br:"cap",f:"tank",t:4,n:"Танки Т4",e:"",r:["vacuum"]},
+{id:"cap_air_1",br:"cap",f:"air",t:1,n:"Самолёты Т1",e:"",r:["#base"]},
+{id:"cap_air_2",br:"cap",f:"air",t:2,n:"Самолёты Т2",e:"",r:["tunnels"]},
+{id:"cap_air_3",br:"cap",f:"air",t:3,n:"Самолёты Т3",e:"",r:["rubber"]},
+{id:"cap_air_4",br:"cap",f:"air",t:4,n:"Самолёты Т4",e:"",r:["vacuum","radar"]},
+{id:"cap_navy_1",br:"cap",f:"navy",t:1,n:"Корабли Т1",e:"",r:["#base","#shipyard"]},
+{id:"cap_navy_2",br:"cap",f:"navy",t:2,n:"Корабли Т2",e:"",r:["metals"]},
+{id:"cap_navy_3",br:"cap",f:"navy",t:3,n:"Корабли Т3",e:"",r:["rolling"]},
+{id:"cap_navy_4",br:"cap",f:"navy",t:4,n:"Корабли Т4",e:"",r:["radar","electrochem"]},
+
+{id:"mag_rifles",br:"mil",t:1,n:"Магазинные винтовки",e:"+5% к атаке пехоты и кавалерии.",r:["cap_inf_1"],buff:{atk:5,fams:["inf"],auto:1}},
+{id:"grenades",br:"mil",t:1,n:"Гранаты",e:"+10% к атаке пехоты при штурме окопов и городов.",r:["explosives"],buff:{atk:10,fams:["inf"]}},
+{id:"hmg",br:"mil",t:1,n:"Станковые пулемёты",e:"+15% к защите пехоты в обороне.",r:["cap_inf_1","metals"],buff:{def:15,fams:["inf"],auto:1}},
+{id:"semiauto",br:"mil",t:2,n:"Самозарядные винтовки",e:"+10% к атаке пехоты.",r:["cap_inf_2","machines_adv"],buff:{atk:10,fams:["inf"],auto:1}},
+{id:"lmg",br:"mil",t:2,n:"Ручные пулемёты",e:"+10% к атаке пехоты и кавалерии в манёвренных боях.",r:["cap_inf_2"],buff:{atk:10,fams:["inf"]}},
+{id:"mortars",br:"mil",t:2,n:"Миномёты",e:"+10% к атаке в позиционных боях; частично заменяют артподдержку там, куда орудия не проходят.",r:["cap_art_1","explosives"],buff:{atk:10,fams:["inf","art"]}},
+{id:"flame",br:"mil",t:3,n:"Огнемёты",e:"+15% при штурме укреплений и городов.",r:["polymers","#oil"],buff:{atk:15,fams:["inf"]}},
+{id:"barrels",br:"mil",t:3,n:"Калиброванные стволы",e:"+10% к атаке и дальности артиллерии.",r:["cap_art_2","machines_adv"],buff:{atk:10,fams:["art"],auto:1}},
+{id:"smg",br:"mil",t:3,n:"Пистолеты-пулемёты",e:"+15% к пехоте в городских боях и десантных операциях.",r:["cap_inf_3"],buff:{atk:15,fams:["inf"]}},
+{id:"assault",br:"mil",t:4,n:"Автоматы",e:"+15% к атаке пехоты.",r:["cap_inf_4","precision"],buff:{atk:15,fams:["inf"],auto:1}},
+{id:"nvd",br:"mil",t:4,n:"Приборы ночного видения",e:"Ночные операции без штрафа; +10% внезапности атак.",r:["precision","radar"],buff:{atk:10,fams:["inf","tank"]}},
+{id:"rpg",br:"mil",t:4,n:"Ручные гранатомёты",e:"+20% к защите пехоты от танков.",r:["cap_inf_4","explosives"],buff:{def:20,fams:["inf"]}},
+{id:"nuke",br:"mil",t:5,n:"Ядерная программа",e:"Базовое время — 5 ходов, отдельное финансирование указами. Радиохимия сокращает срок на четверть. Полностью скрыть программу невозможно.",r:["#capT4","chain"]},
+
+{id:"concrete",br:"ind",t:1,n:"Железобетон",e:"Стройки дешевле на 10% стройматериалов.",r:["machines"],fx:{buildCost:-10}},
+{id:"metals",br:"ind",t:1,n:"Качественные металлы",e:"+5% к выпуску стали.",r:["machines"],fx:{out:{steel:5}}},
+{id:"explosives",br:"ind",t:1,n:"Промышленная взрывчатка",e:"+10% к добыче руд и угля.",r:["electricity"],fx:{mine:{iron:10,alumore:10,coal:10,gold:10}}},
+{id:"coolants",br:"ind",t:2,n:"Улучшенные теплоносители",e:"Фабрики потребляют на 10% меньше угля.",r:["metals"],fx:{inRes:{coal:-10}}},
+{id:"architecture",br:"ind",t:2,n:"Улучшенная архитектура",e:"Все стройки завершаются быстрее.",r:["concrete"]},
+{id:"deepmining",br:"ind",t:2,n:"Глубокая добыча минералов",e:"Доступ к глубоким месторождениям, недосягаемым нынешними методами.",r:["explosives"]},
+{id:"rubber",br:"ind",t:3,n:"Синтетический каучук",e:"Возможность производить каучук из нефти.",r:["polymers"]},
+{id:"machines_adv",br:"ind",t:3,n:"Улучшенные станки",e:"+10% к выпуску всех фабрик; снимает зависимость от импортных станков.",r:["metals"],fx:{outAll:10}},
+{id:"rolling",br:"ind",t:3,n:"Прокатные станы",e:"+20% к выпуску стали.",r:["coolants"],fx:{out:{steel:20}}},
+{id:"precision",br:"ind",t:4,n:"Точные механизмы",e:"+5% к качеству всей продукции.",r:["machines_adv"]},
+{id:"vacuum",br:"ind",t:4,n:"Вакуумная плавка",e:"Авиационные и броневые сплавы; −10% к стоимости производства самолётов и танков.",r:["rolling"],fx:{inFac:{aircraft:-10,tankf:-10}}},
+{id:"electrochem",br:"ind",t:4,n:"Электрохимическая обработка",e:"+20% к выпуску алюминия.",r:["coolants","polymers"],fx:{out:{alum:20}}},
+
+{id:"university",br:"sci",t:1,n:"Университет",e:"+15% ко всем исследованиям; страна может содержать более одного НИЦ.",r:["schools"],spd:{all:15}},
+{id:"physics",br:"sci",t:1,n:"Фундаментальная физика",e:"Научные +20%.",r:["university"],spd:{sci:20}},
+{id:"polymers",br:"sci",t:1,n:"Химия полимеров",e:"Промышленные +15%.",r:["university"],spd:{ind:15}},
+{id:"nii",br:"sci",t:2,n:"НИИ",e:"+15% ко всем исследованиям.",r:["university"],spd:{all:15}},
+{id:"tunnels",br:"sci",t:2,n:"Аэродинамические трубы",e:"Самолёты +30% к скорости исследования.",r:["physics"],spd:{fam_air:30}},
+{id:"spectro",br:"sci",t:2,n:"Спектроскопия",e:"Стрелковое и артиллерия +20%, промышленные +10% к скорости исследования.",r:["physics"],spd:{fam_inf:20,fam_art:20,ind:10}},
+{id:"cyclotron",br:"sci",t:3,n:"Циклотрон",e:"Научные +20%.",r:["nii","physics"],spd:{sci:20}},
+{id:"radiochem",br:"sci",t:3,n:"Радиохимия",e:"Ядерная программа на четверть быстрее.",r:["cyclotron","spectro"],spd:{nuke:25}},
+{id:"chain",br:"sci",t:3,n:"Цепная реакция",e:"Открывает ядерную программу.",r:["cyclotron","radiochem"]},
+{id:"computers",br:"sci",t:4,n:"ЭВМ",e:"+25% ко всем исследованиям.",r:["nii","precision"],spd:{all:25}},
+{id:"radar",br:"sci",t:4,n:"Радиолокация",e:"+обнаружение армии и флоту (бонус обороны и разведки на театре).",r:["nii","electricity"],buff:{def:5,fams:["inf","art","tank","air","navy"],auto:1}},
+{id:"academy",br:"sci",t:4,n:"Академия наук",e:"+15% ко всем исследованиям; каждый новый НИЦ дешевле на 3>.",r:["nii"],spd:{all:15}},
+
+{id:"hospitals",br:"civ",t:1,n:"Больницы",e:"Эпидобстановка лучше на ступень; +0.2% прироста населения.",r:["medicine"]},
+{id:"tram",br:"civ",t:1,n:"Трамвай",e:"+10% к настроениям городского населения.",r:["electricity"]},
+{id:"water",br:"civ",t:1,n:"Водопровод и канализация",e:"Города лучше защищены от эпидемий.",r:[]},
+{id:"radio",br:"civ",t:2,n:"Радио",e:"+3% к настроениям; пропаганда на ход быстрее; +1 к организации всех генералов.",r:["electricity"]},
+{id:"metro",br:"civ",t:2,n:"Метрополитен",e:"+30% к настроениям столицы; престиж державы, потери от бомбардировок ниже.",r:["tram","concrete"]},
+{id:"tnc",br:"civ",t:2,n:"Транснациональные корпорации",e:"+10% к доходам от торговых контрактов; свои компании могут открывать представительства за рубежом.",r:[]},
+{id:"cinema",br:"civ",t:3,n:"Кинематограф",e:"+10% к настроениям; культурное влияние на чужое население.",r:["electricity"]},
+{id:"massmed",br:"civ",t:3,n:"Массовая медицина",e:"+10% прироста населения; ниже шанс эпидемии.",r:["hospitals","water"]},
+{id:"social",br:"civ",t:3,n:"Социальное страхование",e:"Довольствие низшего класса на ступень выше; риск волнений и стачек снижен.",r:[]},
+{id:"massmed2",br:"civ",t:4,n:"Продвинутая массовая медицина",e:"Эпидемии практически исключены; +0.4% прироста.",r:["massmed"]},
+{id:"fgos",br:"civ",t:4,n:"ФГОС",e:"Образование «очень высокое»; +10% к видимому модификатору скорости исследований.",r:["university","academy"],spd:{all:10}},
+{id:"tv",br:"civ",t:4,n:"Телевидение",e:"+5% к настроениям; кампании влияния внутри и вовне на ход быстрее и на ступень сильнее.",r:["radio","cinema"]}
+];
+const techById = Object.fromEntries(TECHS.map(t=>[t.id,t]));
 const DIV_TYPES = [
   ["inf","Пехота","✕"],["mot","Мотопехота","МП"],["mil","Ополчение","ОП"],["cav","Кавалерия","／"],
   ["art","Артиллерия","•"],["tank","Танки","⬭"],["fleet","Флот","⚓"],
@@ -370,7 +486,8 @@ const ARROW_STYLES = [["solid","Сплошная"],["dash","Штриховая"]
 const ARROW_HEADS  = [["end","На конце"],["both","С обеих сторон"],["none","Без наконечника"]];
 const STRUCT_TYPES = [
   ["air","Аэродром","✈","var(--sky)","#6fa8d8","Дальность полёта"],
-  ["supply","Узел снабжения","▦","var(--green)","#6f9d5f","Радиус снабжения"]
+  ["supply","Узел снабжения","▦","var(--green)","#6f9d5f","Радиус снабжения"],
+  ["res","Научный центр (НИЦ)","⚗","var(--brass)","#c9a25a","Радиус влияния"]
 ];
 /* предприятия: ключ, название, значок, что производит (для подсказки) */
 const FACTORIES = [
@@ -378,7 +495,7 @@ const FACTORIES = [
   ["alum","Алюминиевый завод","◨","алюминий"],
   ["build","Завод стройматериалов","▤","стройматериалы"],
   ["refinery","НПЗ","⬢","топливо"],
-  ["tools","Станкостроительный завод","⚙","станки"],
+
   ["auto","Автотранспортный завод","⬭","машины"],
   ["arms","Оружейный завод","✕","стрелковое оружие"],
   ["artf","Артиллерийский завод","•","орудия"],
@@ -387,7 +504,7 @@ const FACTORIES = [
   ["shipyard","Верфь","⚓","корабли"],
   ["aircraft","Авиазавод","▲","самолёты"],
   ["tankf","Танковый завод","▰","танки"],
-  ["cons1","Фабрика товаров низшего класса","▪","товары"],
+  ["cons1","Фабрика товаров низшего класса","▪","1 товар в год"],
   ["cons2","Фабрика товаров среднего класса","▫","товары"],
   ["cons3","Фабрика товаров высшего класса","◇","товары"]
 ];
@@ -473,7 +590,7 @@ function newData(){
     meta:{name:"ВПИ", gmCode:"", lockedRole:null, mapHint:"", underlayHints:{}, iconScale:{div:100,city:100,struct:100,dep:100,rail:100,road:100}, defRadius:{supply:600,air:900}, hideDivLabels:[], version:DATA_VER},
     nations:[{id:uid(),name:"Юхэйдо",color:"#b8503f"},{id:uid(),name:"Виктория",color:"#3f6db8"},{id:uid(),name:"Раймс",color:"#8a5fb0"},{id:uid(),name:"РСМ",color:"#c23b3b"}],
     players:[], provinces:[], cities:[], divisions:[], structures:[], deposits:[], rails:[], roads:[], zones:[], arrows:[], theatres:[], templates:[], stocks:{res:{},eq:{}}, statRef:{},
-    econ:{year:1, recipes:{}, nat:{}, log:[]}
+    econ:{year:1, recipes:{}, nat:{}, log:[]}, research:{nat:{}}
   });
 }
 /* старое поле «Производство ресурсов» превращается в добывающие точки */
@@ -503,7 +620,7 @@ function migrate(d){
       resv:{},
       mines:Array.isArray(p.stats?.mines)?p.stats.mines.map(m=>({id:m.id||uid(),name:m.name||"",res:m.res||"coal",amt:+m.amt||0}))
             :legacyMines(p.stats),
-      fabs:Array.isArray(p.stats?.fabs)?p.stats.fabs.filter(f=>f&&f.type).map(f=>({type:f.type,count:String(f.count??1)})):[],
+      fabs:Array.isArray(p.stats?.fabs)?p.stats.fabs.filter(f=>f&&f.type&&FACTORIES.some(x=>x[0]===f.type)).map(f=>({type:f.type,count:String(f.count??1)})):[],
       fab:p.stats?.fab||"",
       notes:(p.stats?.notes||"") + (p.stats?.res?((p.stats?.notes?"\n":"")+"Ресурсы (из старой версии):\n"+p.stats.res):"")
     },
@@ -566,10 +683,23 @@ function migrate(d){
       if(JSON.stringify(e.recipes[k])===JSON.stringify(r)) e.recipes[k]=JSON.parse(JSON.stringify(DEF_RECIPES[k]));
     e.rv=2;
   }
+  /* v3.3: станкостроительный завод убран из игры — старые постройки просто не считаются */
+  delete e.recipes.tools;
   const co=JSON.parse(JSON.stringify(DEF_COSTS));
   for(const [k,v] of Object.entries(e.costs||{})) co[k]={...v};
   e.costs=co;
   e.chargeBuild=e.chargeBuild!==false;
+  /* исследования: отмеченные технологии, указы и модификаторы по государствам */
+  const rs=d.research=d.research||{};
+  const rn={};
+  for(const [k,v] of Object.entries(rs.nat||{})){
+    const done={};
+    for(const id of Object.keys(v?.done||{})) if(techById[id]&&v.done[id])done[id]=true;
+    rn[k]={done, base:+v?.base||1, mod:+v?.mod||0,
+      projects:(Array.isArray(v?.projects)?v.projects:[]).filter(p=>p&&techById[p.id]).map(p=>({id:p.id,prog:+p.prog||0})),
+      note:v?.note||""};
+  }
+  rs.nat=rn;
   return d;
 }
 const nation=id=>data.nations.find(n=>n.id===id);
@@ -640,6 +770,12 @@ const costOf=cat=>data.econ.costs?.[cat]||{};
 const costText=c=>Object.entries(c||{}).filter(([,v])=>+v).map(([k,v])=>k==="money"?fmtN(v)+">":fmtN(v)+" "+resName(k).toLowerCase()).join(" + ")||"бесплатно";
 const costMul=(c,n)=>Object.fromEntries(Object.entries(c||{}).map(([k,v])=>[k,(+v||0)*n]));
 const facInfo=t=>recipeText(t)+" · постройка: "+costText(costOf(FAC_CAT[t]));
+/* стоимость постройки с учётом технологий (железобетон — стройматериалы дешевле) */
+function buildCostFor(nid,cat,n){
+  const c=costMul(costOf(cat),n||1), T=nid?techEcon(nid):null;
+  if(T&&T.buildCost&&c.build) c.build=rnd(c.build*(1+T.buildCost/100));
+  return c;
+}
 /* хватает ли запасов; при нехватке — подсказка, как строить бесплатно */
 function affordable(nid,c,what){
   if(!data.econ.chargeBuild||!nid)return true;
@@ -663,23 +799,37 @@ const recipeText=t=>{
 function econCalc(nid){
   const R={};
   const row=k=>R[k]||(R[k]={mine:0,fout:0,fin:0,mod:0,add:0,need:0,prod:0,net:0,stock:0,src:[],dst:[]});
+  const T=techEcon(nid);
+  /* без «Электричества» фабрики свыше десятой работают вполсилы */
+  let fabTotal=0;
+  for(const p of data.provinces) if(p.nationId===nid) for(const f of (p.stats.fabs||[])) fabTotal+=num(f.count);
+  const powK=(T.power||fabTotal<=10)?1:(10+(fabTotal-10)*0.5)/fabTotal;
   for(const p of data.provinces){
     if(p.nationId!==nid)continue;
     for(const m of (p.stats.mines||[])){
-      const a=+m.amt||0; if(!a)continue;
+      const a=rnd((+m.amt||0)*(1+(T.mine[m.res]||0)/100)); if(!a)continue;
       const r=row(m.res); r.mine+=a; r.src.push(["⛏ "+(m.name||"Добыча")+" · "+p.name,a]);
     }
     for(const f of (p.stats.fabs||[])){
       const n=num(f.count), rec=data.econ.recipes[f.type]; if(!n||!rec)continue;
       const lbl=facLabel(f.type)+(n>1?" ×"+n:"")+" · "+p.name;
-      for(const [k,q] of Object.entries(rec.out||{})){ if(!+q)continue; const r=row(k); r.fout+=q*n; r.src.push([lbl,q*n]); }
-      for(const [k,q] of Object.entries(rec.in||{})){ if(!+q)continue; const r=row(k); r.fin+=q*n; r.dst.push([lbl,q*n]); }
+      const mil=FAC_CAT[f.type]==="mil";
+      for(const [k,q] of Object.entries(rec.out||{})){
+        if(!+q)continue;
+        const v=rnd(q*n*powK*(1+(T.outAll+(T.out[k]||0)+(mil?T.outMil:0))/100));
+        const r=row(k); r.fout+=v; r.src.push([lbl,v]);
+      }
+      for(const [k,q] of Object.entries(rec.in||{})){
+        if(!+q)continue;
+        const v=rnd(q*n*powK*(1+((T.inRes[k]||0)+(T.inFac[f.type]||0))/100));
+        const r=row(k); r.fin+=v; r.dst.push([lbl,v]);
+      }
     }
   }
   /* месторождения на карте тоже дают добычу, если ГМ не спрятал их от всех */
   for(const dp of (data.deposits||[])){
     if(dp.nationId!==nid||dp.vis==="gm"||!RAW_RES.includes(dp.type))continue;
-    const a=num(dp.output); if(!a)continue;
+    const a=rnd(num(dp.output)*(1+(T.mine[dp.type]||0)/100)); if(!a)continue;
     const r=row(dp.type); r.mine+=a; r.src.push(["◆ Месторождение "+dp.name,a]);
   }
   const e=econNat(nid);
@@ -698,6 +848,106 @@ function econCalc(nid){
   }
   return R;
 }
+/* =============================================================
+   ПРАВИЛА ИССЛЕДОВАНИЙ
+   ============================================================= */
+let _oilCache={};
+function resNat(nid,create){
+  let r=data.research.nat[nid];
+  if(!r&&create) r=data.research.nat[nid]={done:{},base:1,mod:0,projects:[],note:""};
+  return r||{done:{},base:1,mod:0,projects:[],note:""};
+}
+const techDone=(nid,id)=>!!data.research.nat[nid]?.done?.[id];
+/* тир семейства возможностей: наибольший отмеченный */
+function capTier(nid,f){
+  let m=null;
+  for(let t=0;t<=8;t++) if(techDone(nid,"cap_"+f+"_"+t))m=t;
+  return m;
+}
+const tierStat=t=>t==null?1:(TIER_STAT[t]??(TIER_STAT[4]*Math.pow(TIER_STEP,t-4)));
+/* особые условия берутся с карты, а не отмечаются вручную */
+function techSpecial(nid,k){
+  if(k==="#base") return TECHS.filter(t=>t.br==="base").every(t=>techDone(nid,t.id));
+  if(k==="#shipyard") return data.provinces.some(p=>p.nationId===nid&&(p.stats.fabs||[]).some(f=>f.type==="shipyard"&&num(f.count)>0));
+  if(k==="#oil"){                      /* считается по карте; ненадолго кэшируем — условие спрашивают десятки раз подряд */
+    const c=_oilCache[nid];
+    if(c&&performance.now()-c.t<600)return c.v;
+    const v=(econCalc(nid).oil?.mine||0)>0;
+    _oilCache[nid]={t:performance.now(),v};
+    return v;
+  }
+  if(k==="#capT4") return TECH_FAM.every(([f])=>(capTier(nid,f)??-1)>=4);
+  return true;
+}
+const techPrev=n=>n.br==="cap"&&techById["cap_"+n.f+"_"+(n.t-1)]?"cap_"+n.f+"_"+(n.t-1):null;
+/* правило двух технологий: тир N открыт, если в разделе изучено 2 технологии тира N−1 */
+function techGate(nid,n){
+  if(!["mil","ind","sci","civ"].includes(n.br)||n.t<2)return null;
+  const prev=TECHS.filter(m=>m.br===n.br&&m.t===n.t-1);
+  if(!prev.length)return null;
+  return {need:2,have:prev.filter(m=>techDone(nid,m.id)).length,total:prev.length,tier:n.t-1};
+}
+function techOpen(nid,n){
+  for(const r of n.r){ if(r[0]==="#"){ if(!techSpecial(nid,r))return false; } else if(!techDone(nid,r))return false; }
+  const p=techPrev(n); if(p&&!techDone(nid,p))return false;
+  const g=techGate(nid,n); if(g&&g.have<g.need)return false;
+  return true;
+}
+/* суммы баффов: скорость исследований, экономика, бой */
+function techSpd(nid){
+  const s={all:0,sci:0,ind:0,mil:0,civ:0,base:0,nuke:0};
+  for(const [f] of TECH_FAM)s["fam_"+f]=0;
+  for(const t of TECHS){ if(!t.spd||!techDone(nid,t.id))continue; for(const [k,v] of Object.entries(t.spd)) s[k]=(s[k]||0)+v; }
+  return s;
+}
+function techEcon(nid){
+  const T={out:{},inRes:{},inFac:{},mine:{},outAll:0,outMil:0,buildCost:0,power:false,heavy:false};
+  for(const t of TECHS){
+    if(!t.fx||!techDone(nid,t.id))continue;
+    for(const [k,v] of Object.entries(t.fx)){
+      if(k==="out"||k==="inRes"||k==="inFac"||k==="mine") for(const [k2,v2] of Object.entries(v)) T[k][k2]=(T[k][k2]||0)+v2;
+      else if(k==="power"||k==="heavy") T[k]=true;
+      else T[k]+=v;
+    }
+  }
+  return T;
+}
+/* боевая сила: тир вооружения плюс сумма постоянных баффов военных технологий */
+function combatMul(u,side){
+  if(!u||!data.research)return 1;
+  const fam=DIV_FAM[u.type];
+  if(!fam)return 1;
+  let atk=0,def=0;
+  for(const t of TECHS){
+    if(!t.buff||!t.buff.auto||!techDone(u.nationId,t.id))continue;
+    if(!t.buff.fams.includes(fam))continue;
+    atk+=t.buff.atk||0; def+=t.buff.def||0;
+  }
+  const k=1+((side==="atk"?atk:side==="def"?def:(atk+def)/2))/100;
+  return tierStat(capTier(u.nationId,fam))*k;
+}
+/* сколько «очков» исследования страна набирает за год */
+function techSpeed(nid,id){
+  const r=resNat(nid), s=techSpd(nid), n=techById[id];
+  const sec=n?(n.br==="cap"?(s["fam_"+n.f]||0):(s[n.br]||0)):0;
+  return Math.max(0.05,(+r.base||1)*(1+(s.all+sec+(+r.mod||0))/100));
+}
+function techCost(nid,id){
+  const n=techById[id]; if(!n)return 1;
+  let c=TECH_COST[n.t]??3;
+  if(id==="nuke"&&techDone(nid,"radiochem"))c*=0.75;
+  return c;
+}
+const techYears=(nid,id)=>rnd(techCost(nid,id)/techSpeed(nid,id));
+/* НИЦ: один на страну, с университетом — сколько угодно; академия наук удешевляет */
+const nicCount=nid=>data.structures.filter(s=>s.type==="res"&&s.nationId===nid).length;
+const nicLimit=nid=>techDone(nid,"university")?99:1;
+function nicCost(nid){
+  const c={...(data.econ.costs.res||{money:10})};
+  if(techDone(nid,"academy"))c.money=Math.max(0,(+c.money||0)-3);
+  return c;
+}
+
 /* подсказка по ресурсу: откуда приходит, куда уходит, как считается */
 function resTipHtml(nid,k){
   if(!data||!canSeeNationEcon(nid))return "";
@@ -917,7 +1167,7 @@ vp.addEventListener("pointerdown",e=>{
   if(tool==="structure"&&role.gm&&e.button===0){
     const [x,y]=toWorld(e.clientX,e.clientY);
     /* аэродром строится за счёт государства, которому принадлежит провинция */
-    const pv=provinceAt(x,y), payer=pv?.nationId||null, cost=costOf("air");
+    const pv=provinceAt(x,y), payer=pv?.nationId||null, cost=buildCostFor(payer,"air",1);
     if(payer&&!affordable(payer,cost,"аэродром"))return;
     const s={id:uid(),name:"Аэродром",type:"air",x:Math.round(x),y:Math.round(y),nationId:payer||data.nations[0]?.id||null,
       radius:(data.meta.defRadius?.air||150),planes:{},notes:"",vis:"all"};
@@ -2111,6 +2361,7 @@ function unitWeight(u){
   if(u.type==="tank") w*=1.3;
   const t=TRAINING.indexOf(u.training||"средняя");
   if(t>=0) w*=0.75+0.09*t;             /* обученность влияет на плотность */
+  w*=combatMul(u);                     /* тир вооружения и военные технологии */
   return Math.max(0.15,w);
 }
 function sideOf(th,nid){
@@ -2536,7 +2787,10 @@ window.delMine=id=>{const p=selProv(); if(!p)return; snapshot(true); markDirty()
   p.stats.mines=(p.stats.mines||[]).filter(m=>m.id!==id); reIns();};
 window.addFab=()=>{const p=selProv(); if(!p)return;
   const t=$("#f_newfab").value, n=Math.max(1,Math.round(+$("#f_newfabn").value||1));
-  const cost=costMul(costOf(FAC_CAT[t]),n);
+  if(FAC_CAT[t]==="heavy"&&p.nationId&&!techDone(p.nationId,"machines")){
+    toast("Тяжёлую промышленность строит только держава с технологией «Базовые станки»");return;
+  }
+  const cost=buildCostFor(p.nationId,FAC_CAT[t],n);
   if(!affordable(p.nationId,cost,facLabel(t)+" ×"+n))return;
   snapshot(true); markDirty();
   const paid=payCost(p.nationId,cost);
@@ -3143,7 +3397,16 @@ function filterForPlayer(pid){
   delete d.statRef;
   d.econ.nat = pNation&&d.econ.nat[pNation] ? {[pNation]:d.econ.nat[pNation]} : {};
   if(pNation&&d.econ.nat[pNation]&&!d.provinces.some(p=>p.id===d.econ.nat[pNation].cap)) d.econ.nat[pNation].cap=null;
-  d.econ.log=(d.econ.log||[]).map(e=>({year:e.year,at:e.at,nat:pNation&&e.nat?.[pNation]?{[pNation]:e.nat[pNation]}:{}}));
+  d.econ.log=(d.econ.log||[]).map(e=>({year:e.year,at:e.at,
+    nat:pNation&&e.nat?.[pNation]?{[pNation]:e.nat[pNation]}:{},
+    tech:pNation&&e.tech?.[pNation]?{[pNation]:e.tech[pNation]}:{}}));
+  /* исследования: только своё государство, скрытый коэффициент скорости не выдаём */
+  const rs=d.research?.nat||{};
+  d.research={nat:{}};
+  if(pNation&&rs[pNation]){
+    const r=rs[pNation];
+    d.research.nat[pNation]={done:r.done,base:1,mod:r.mod,projects:r.projects,note:r.note};
+  }
   return d;
 }
 $("#btnExport").addEventListener("click",()=>{
@@ -3787,7 +4050,7 @@ function openEconPanel(nid){
       `<tr data-pv="${p.id}" style="cursor:pointer" title="Показать провинцию на карте"><td>${cap?.id===p.id?"◈ ":""}${esc(p.name)}</td>
         <td style="text-align:left;white-space:normal">${(p.stats.mines||[]).filter(x=>+x.amt).map(x=>esc(resName(x.res))+" "+fmtN(x.amt)).join(", ")||"—"}</td>
         <td style="text-align:left;white-space:normal">${(p.stats.fabs||[]).filter(f=>num(f.count)).map(f=>esc(facLabel(f.type))+" ×"+esc(f.count)).join(", ")||"—"}</td></tr>`).join("");
-    const logs=(data.econ.log||[]).filter(l=>l.nat?.[nid]).slice(0,6);
+    const logs=(data.econ.log||[]).filter(l=>l.nat?.[nid]||l.tech?.[nid]).slice(0,6);
     const sc=body.scrollTop;
     body.innerHTML=`
       <div class="list-row" style="margin-bottom:6px">
@@ -3827,7 +4090,8 @@ function openEconPanel(nid){
       <h3 class="sec">Журнал лет</h3>
       <div class="econlog">${logs.length?logs.map(l=>`<div class="card" style="padding:6px 10px;border-left-color:var(--line)">
           <div class="sub" style="margin:0 0 3px">Год ${l.year} · ${esc(l.at||"")}</div>
-          <div style="font-size:11px;line-height:1.7">${l.nat[nid].map(([k,was,net,nv,lack])=>`${esc(resName(k))}: ${fmtN(was)} → <b>${fmtN(nv)}</b> <span class="${sgnC(net)}">(${pmN(net)})</span>${lack?` <span class="minus">нехватка ${fmtN(lack)}</span>`:""}`).join(" · ")}</div></div>`).join("")
+          <div style="font-size:11px;line-height:1.7">${l.nat[nid].map(([k,was,net,nv,lack])=>`${esc(resName(k))}: ${fmtN(was)} → <b>${fmtN(nv)}</b> <span class="${sgnC(net)}">(${pmN(net)})</span>${lack?` <span class="minus">нехватка ${fmtN(lack)}</span>`:""}`).join(" · ")}
+          ${l.tech?.[nid]?.length?`<div style="color:var(--brass)">🔬 изучено: ${esc(l.tech[nid].join(", "))}</div>`:""}</div></div>`).join("")
         :'<div class="hint">«Прошёл год» ещё не применялся.</div>'}</div>`;
     body.scrollTop=sc;
     if(q("#ec_nat"))q("#ec_nat").onchange=ev=>{nid=econNation=ev.target.value;draw();};
@@ -3863,6 +4127,219 @@ function openEconPanel(nid){
   draw();
 }
 $("#btnEcon").addEventListener("click",()=>openEconPanel(role?.gm?null:myNation()));
+$("#btnTech").addEventListener("click",()=>openResearch(role?.gm?null:myNation()));
+
+/* =============================================================
+   ОКНО ИССЛЕДОВАНИЙ
+   Дерево, военные возможности, указы НИЦ, скорость,
+   загрузка профиля из конструктора «tech-tree».
+   ============================================================= */
+let resNation=null;
+function techReqHtml(nid,t){
+  const reqs=t.r.slice(), p=techPrev(t); if(p)reqs.unshift(p);
+  const rq=reqs.map(r=>{
+    const ok=r[0]==="#"?techSpecial(nid,r):techDone(nid,r);
+    return `<span class="rq ${ok?"ok":"no"}">${ok?"✔":"✕"} ${esc(r[0]==="#"?TECH_SPECIAL[r]:techById[r]?.n||r)}</span>`;
+  }).join("");
+  const g=techGate(nid,t);
+  return (rq||'<span class="rq dim">без предпосылок</span>')+
+    (g?`<span class="rq ${g.have>=g.need?"ok":"no"}">${g.have>=g.need?"✔":"✕"} правило двух: ${g.have}/${g.need} в тире ${g.tier}</span>`:"");
+}
+function techRow(nid,t,gm){
+  const done=techDone(nid,t.id), open=techOpen(nid,t);
+  const pr=resNat(nid).projects.find(p=>p.id===t.id);
+  return `<div class="trow ${done?"done":open?"open":"lock"}">
+    <span class="tm" ${gm?`data-tt="${t.id}" style="cursor:pointer" title="${done?"Снять отметку":"Отметить изученным"}"`:""}>${done?"✔":open?"☐":"🔒"}</span>
+    <div style="flex:1;min-width:0">
+      <b>${esc(t.n)}</b>${t.e?` <span class="dim">${esc(t.e)}</span>`:""}
+      <div class="s">${techReqHtml(nid,t)}${pr?`<span class="rq ok">в работе ${fmtN(pr.prog)}/${fmtN(techCost(nid,t.id))}</span>`:""}</div>
+    </div>
+    ${gm&&!done&&!pr?`<button data-tgo="${t.id}" title="Указ: НИЦ берётся за эту технологию (≈${fmtN(techYears(nid,t.id))} лет)">Указ</button>`:""}</div>`;
+}
+function openResearch(nid){
+  if(!data)return;
+  const gm=!!role.gm;
+  const list=gm?data.nations:data.nations.filter(n=>n.id===myNation());
+  if(!list.length){toast(gm?"Сначала заведи государства":"Тебе не назначено государство");return;}
+  nid=(nid&&list.some(n=>n.id===nid))?nid:(resNation&&list.some(n=>n.id===resNation)?resNation:list[0].id);
+  resNation=nid;
+  const m=openModal("Исследования","",[["Закрыть","primary",closeModal]],"wide");
+  const body=m.querySelector(".mbody");
+  const q=s=>body.querySelector(s);
+  const draw=()=>{
+    if(!m.isConnected)return;
+    const r=resNat(nid), s=techSpd(nid), T=techEcon(nid), sc=body.scrollTop;
+    const caps=TECH_FAM.map(([f,n])=>{
+      const t=capTier(nid,f);
+      const nextT=t==null?(techById["cap_"+f+"_0"]?0:1):t+1;
+      const nx=techById["cap_"+f+"_"+nextT];
+      return `<tr><td>${n}</td><td>${t==null?'<span class="dim">нет</span>':"Т"+t}</td>
+        <td>×${rnd(tierStat(t))}</td>
+        <td style="text-align:left;white-space:normal">${nx?`<b>${esc(nx.n)}</b> · ${techReqHtml(nid,nx)}`:'<span class="dim">дальше тиров не задано</span>'}</td>
+        <td>${gm&&nx&&!techDone(nid,nx.id)?`<button data-tgo="${nx.id}">Указ</button>`:""}</td></tr>`;
+    }).join("");
+    const eff=[];
+    if(T.out.steel)eff.push(`выпуск стали ${pmN(T.out.steel)}%`);
+    if(T.out.alum)eff.push(`выпуск алюминия ${pmN(T.out.alum)}%`);
+    if(T.outAll)eff.push(`выпуск всех фабрик ${pmN(T.outAll)}%`);
+    if(T.outMil)eff.push(`выпуск военных фабрик ${pmN(T.outMil)}%`);
+    if(T.inRes.coal)eff.push(`расход угля на фабриках ${pmN(T.inRes.coal)}%`);
+    if(T.inFac.aircraft||T.inFac.tankf)eff.push(`расход авиа- и танковых заводов ${pmN(T.inFac.aircraft||T.inFac.tankf)}%`);
+    if(T.mine.coal)eff.push(`добыча руд и угля ${pmN(T.mine.coal)}%`);
+    if(T.buildCost)eff.push(`стройматериалы на постройку ${pmN(T.buildCost)}%`);
+    eff.push(T.power?"электроснабжение устойчиво":"без «Электричества»: фабрики свыше десятой работают вполсилы");
+    eff.push(T.heavy?"тяжёлую промышленность строить можно":"тяжёлую промышленность строить нельзя (нужны «Базовые станки»)");
+    const combat=TECH_FAM.map(([f,n])=>{
+      const u={type:Object.keys(DIV_FAM).find(k=>DIV_FAM[k]===f),nationId:nid};
+      return `${n}: атака ×${rnd(combatMul(u,"atk"))} · защита ×${rnd(combatMul(u,"def"))}`;
+    }).join(" · ");
+    const nic=nicCount(nid), lim=nicLimit(nid);
+    const projects=r.projects.map((p,i)=>{
+      const c=techCost(nid,p.id), sp=techSpeed(nid,p.id), act=i<nic;
+      return `<div class="rowx"><div style="flex:1;min-width:0"><b>${esc(techById[p.id].n)}</b>
+          <div class="bar"><i style="width:${Math.min(100,p.prog/c*100).toFixed(0)}%"></i></div>
+          <div class="s" style="font-size:10px;color:var(--ink-dim)">${fmtN(p.prog)} из ${fmtN(c)} · ${act?`+${fmtN(sp)} за год, осталось ≈${fmtN(Math.max(0,rnd((c-p.prog)/sp)))} лет`:'<span class="no">нет свободного НИЦ — стоит</span>'}</div></div>
+        ${gm?`<button class="danger" data-tdel="${p.id}" title="Отменить указ">✕</button>`:""}</div>`;
+    }).join("")||'<div class="hint" style="margin-top:0">Указов нет.</div>';
+    body.innerHTML=`
+      <div class="list-row" style="margin-bottom:6px">
+        ${gm?`<select id="tc_nat" style="flex:1">${list.map(n=>`<option value="${n.id}" ${n.id===nid?'selected':''}>${esc(n.name)}</option>`).join("")}</select>`
+            :`<b style="flex:1;font-family:var(--serif);font-size:15px;color:${nation(nid)?.color||"var(--ink)"}">${esc(nation(nid)?.name||"")}</b>`}
+        <span class="pill" style="font-size:11px;padding:3px 8px;flex:0 0 auto">год ${data.econ.year}</span>
+      </div>
+      <div class="statgrid" style="grid-template-columns:repeat(3,1fr)">
+        <div><b>${pmN(s.all+(+r.mod||0))}%</b><span>модификатор скорости</span></div>
+        <div><b>${nic} / ${lim>90?"∞":lim}</b><span>НИЦ</span></div>
+        <div><b>${Object.keys(r.done).length}</b><span>изучено технологий</span></div>
+      </div>
+      ${gm?`<div class="list-row">
+        <span style="flex:0 0 auto;color:var(--ink-dim);font-size:11px">СКРЫТЫЙ КОЭФ.</span>
+        <input id="tc_base" type="number" min="0.05" step="0.05" value="${+r.base||1}" style="flex:0 0 80px" title="Базовая скорость страны. Игрок её не видит и в сборку не попадает.">
+        <span style="flex:0 0 auto;color:var(--ink-dim);font-size:11px">ВИДИМЫЙ МОД., %</span>
+        <input id="tc_mod" type="number" step="1" value="${+r.mod||0}" style="flex:0 0 80px" title="Образование, финансирование науки, отыгрыш — всё, что ГМ добавляет вручную">
+        <button id="tc_nic" title="Построить НИЦ в столице экономики за ${esc(costText(nicCost(nid)))}">+ НИЦ</button>
+      </div>`:`<div class="hint" style="margin-top:0">Скорость исследований: технологии дают ${pmN(s.all)}%, решения правительства ${pmN(+r.mod||0)}%.</div>`}
+      <h3 class="sec">Указы НИЦ</h3>
+      ${projects}
+      <h3 class="sec">Военные возможности</h3>
+      <table class="pool"><tr><th>Семейство</th><th>Тир</th><th>Атака и защита</th><th style="text-align:left">Следующий тир</th><th></th></tr>${caps}</table>
+      <div class="hint">Тир открывает весь класс разом: корабли Т2 — это и крейсеры, и авианосцы, и подлодки Т2. Бой на карте считает: ${esc(combat)}.</div>
+      <h3 class="sec">Что приложение считает по технологиям</h3>
+      <div class="hint" style="margin-top:0">${esc(eff.join(" · "))}.<br>Остальные баффы (настроения, население, эпидемии, разведка, условные боевые) записаны в описаниях технологий, но в расчёты не входят — их отыгрывает ГМ.</div>
+      ${TECH_BR.filter(b=>b[0]!=="cap").map(([b,bn])=>{
+        const ts=TECHS.filter(t=>t.br===b);
+        const tiers=[...new Set(ts.map(t=>t.t))].sort();
+        return `<h3 class="sec">${bn}</h3>`+tiers.map(tr=>
+          `${b==="base"?"":`<div class="hint" style="margin:6px 0 3px">Тир ${tr}</div>`}
+           <div class="tgrid">${ts.filter(t=>t.t===tr).map(t=>techRow(nid,t,gm)).join("")}</div>`).join("");
+      }).join("")}
+      ${gm?`<h3 class="sec">Дерево из конструктора</h3>
+        <div class="hint" style="margin-top:0">Файл, выгруженный страницей «Дерево технологий» (кнопка «Выгрузить»), можно перенести сюда целиком: отмеченные в нём технологии станут изученными у выбранного государства. Неизвестные id пропускаются.</div>
+        <div class="btnrow"><button id="tc_imp" class="primary">📥 Загрузить дерево из файла</button>
+          <button id="tc_base_all" title="Отметить все базовые технологии">Отметить базовые</button>
+          <button id="tc_clear" class="danger" title="Снять все отметки у этого государства">Снять все отметки</button></div>`:""}`;
+    body.scrollTop=sc;
+    if(q("#tc_nat"))q("#tc_nat").onchange=e=>{nid=resNation=e.target.value;draw();};
+    if(q("#tc_nic"))q("#tc_nic").onclick=()=>buildNIC(nid,draw);
+    if(q("#tc_imp"))q("#tc_imp").onclick=()=>importTechFile(nid,draw);
+    if(q("#tc_base_all"))q("#tc_base_all").onclick=()=>{snapshot(true);markDirty();const rr=resNat(nid,true);TECHS.filter(t=>t.br==="base").forEach(t=>rr.done[t.id]=true);draw();render();toast("Базовые технологии отмечены");};
+    if(q("#tc_clear"))q("#tc_clear").onclick=()=>{
+      if(!confirm(`Снять все отметки технологий у «${nation(nid)?.name||""}»?`))return;
+      snapshot(true);markDirty();const rr=resNat(nid,true);rr.done={};rr.projects=[];draw();render();toast("Отметки сняты");};
+    body.querySelectorAll("[data-tt]").forEach(el=>el.onclick=()=>toggleTech(nid,el.dataset.tt,draw));
+    body.querySelectorAll("[data-tgo]").forEach(b=>b.onclick=()=>startProject(nid,b.dataset.tgo,draw));
+    body.querySelectorAll("[data-tdel]").forEach(b=>b.onclick=()=>{
+      snapshot(true);markDirty();const rr=resNat(nid,true);rr.projects=rr.projects.filter(p=>p.id!==b.dataset.tdel);draw();});
+  };
+  const onF=ev=>{
+    if(!gm)return;
+    const t=ev.target;
+    if(t.id==="tc_base"){snapshot();markDirty();resNat(nid,true).base=Math.max(0.05,+t.value||1);}
+    else if(t.id==="tc_mod"){snapshot();markDirty();resNat(nid,true).mod=+t.value||0;}
+    else return;
+    if(ev.type==="change")draw();
+  };
+  body.addEventListener("input",onF); body.addEventListener("change",onF);
+  draw();
+}
+/* отметить или снять технологию вручную: ГМ вправе и вне очереди */
+function toggleTech(nid,id,after){
+  if(!role.gm)return;
+  const r=resNat(nid,true), t=techById[id];
+  snapshot(true); markDirty();
+  if(r.done[id]){
+    delete r.done[id];
+    const kids=TECHS.filter(x=>x.r.includes(id)&&r.done[x.id]).map(x=>x.n);
+    if(kids.length)toast(`Отметка снята. Зависимые остались отмеченными: ${kids.join(", ")}`);
+  } else {
+    r.done[id]=true;
+    r.projects=r.projects.filter(p=>p.id!==id);
+    if(!techOpen(nid,t))toast("Отмечено вне очереди: условия не выполнены");
+  }
+  render(); if(after)after();
+}
+/* указ: свободный НИЦ берётся за технологию */
+function startProject(nid,id,after){
+  if(!role.gm)return;
+  const r=resNat(nid,true);
+  if(r.done[id]){toast("Уже изучено");return;}
+  if(r.projects.some(p=>p.id===id)){toast("Уже в работе");return;}
+  const nic=nicCount(nid);
+  if(!nic){toast("У государства нет НИЦ: построй его кнопкой «+ НИЦ»");return;}
+  if(r.projects.length>=nic){toast(`Все НИЦ заняты (${nic}). Отмени другой указ или построй ещё один НИЦ`);return;}
+  if(!techOpen(nid,techById[id])&&!confirm("Условия технологии не выполнены. Всё равно отдать указ?"))return;
+  snapshot(true); markDirty();
+  r.projects.push({id,prog:0});
+  if(after)after();
+  toast(`Указ отдан: ${techById[id].n} · ≈${fmtN(techYears(nid,id))} лет при нынешней скорости`);
+}
+/* НИЦ ставится в столице экономики и стоит денег */
+function buildNIC(nid,after){
+  if(!role.gm)return;
+  if(nicCount(nid)>=nicLimit(nid)){toast("Больше одного НИЦ можно содержать только с технологией «Университет»");return;}
+  const p=econCap(nid);
+  if(!p){toast("У государства нет провинций");return;}
+  const cost=nicCost(nid);
+  if(!affordable(nid,cost,"НИЦ"))return;
+  const c=centroid(p.points), U=Math.max(3,(img.naturalWidth||4000)/420);
+  snapshot(true); markDirty();
+  const paid=payCost(nid,cost);
+  const s={id:uid(),name:"НИЦ",type:"res",x:Math.round(c[0]+U*4*nicCount(nid)),y:Math.round(c[1]+U*4),
+    nationId:nid,radius:0,planes:{},notes:"",vis:"owner"};
+  data.structures.push(s);
+  render(); if(after)after();
+  toast(`НИЦ построен в провинции «${p.name}»${paid?` · списано ${costText(cost)}`:""}`);
+}
+/* загрузка профиля из конструктора дерева технологий */
+function importTechFile(nid,after){
+  if(!role.gm)return;
+  const inp=document.createElement("input"); inp.type="file"; inp.accept=".json,application/json";
+  inp.onchange=()=>{
+    const f=inp.files[0]; if(!f)return;
+    const rd=new FileReader();
+    rd.onload=()=>{
+      let d=null;
+      try{ d=JSON.parse(rd.result); }catch(e){ toast("Файл не читается: нужен .json, выгруженный конструктором дерева"); return; }
+      const done=Array.isArray(d?.done)?d.done:null;
+      if(!done){ toast("Не тот файл: в нём нет списка изученного"); return; }
+      const known=done.filter(id=>techById[id]), skip=done.length-known.length;
+      const apply=(replace)=>{
+        snapshot(true); markDirty();
+        const r=resNat(nid,true);
+        if(replace){ r.done={}; r.projects=[]; }
+        known.forEach(id=>r.done[id]=true);
+        closeModal(); render(); if(after)after();
+        toast(`Технологий перенесено: ${known.length}`);
+      };
+      openModal("Загрузка дерева",`
+        <div class="hint" style="margin-top:0">Файл «${esc(d.name||f.name)}»: изученных технологий ${known.length}${skip?`, неизвестных пропущено ${skip}`:""}.<br>
+        Государство: <b style="color:var(--brass)">${esc(nation(nid)?.name||"")}</b>. Условия и правило двух технологий проверяются как обычно — отметки вне очереди останутся, но будут подсвечены.</div>`,
+        [["Заменить отметки","primary",()=>apply(true)],["Добавить к отмеченным","",()=>apply(false)],["Отмена","",closeModal]]);
+    };
+    rd.readAsText(f);
+  };
+  inp.click();
+}
 
 /* ---- «Прошёл год»: итог каждого ресурса ложится в запас ---- */
 function confirmYear(after){
@@ -3882,8 +4359,8 @@ function confirmYear(after){
 function passYear(){
   if(!role?.gm)return;
   snapshot(true); markDirty();
-  const y=data.econ.year, entry={year:y,at:new Date().toISOString().slice(0,10),nat:{}};
-  let short=0;
+  const y=data.econ.year, entry={year:y,at:new Date().toISOString().slice(0,10),nat:{},tech:{}};
+  let short=0, techDoneN=0;
   for(const n of data.nations){
     const R=econCalc(n.id), lines=[];
     for(const [k,r] of Object.entries(R)){
@@ -3894,11 +4371,18 @@ function passYear(){
       lines.push([k,was,r.net,nv,lack]);
     }
     if(lines.length)entry.nat[n.id]=lines;
+    /* исследования: каждый НИЦ двигает один указ */
+    const rr=resNat(n.id,true), got=[];
+    for(const pr of rr.projects.slice(0,nicCount(n.id))){
+      pr.prog=rnd(pr.prog+techSpeed(n.id,pr.id));
+      if(pr.prog>=techCost(n.id,pr.id)){ rr.done[pr.id]=true; got.push(techById[pr.id].n); pr.fin=true; }
+    }
+    if(got.length){ rr.projects=rr.projects.filter(p=>!p.fin); entry.tech[n.id]=got; techDoneN+=got.length; }
   }
   data.econ.log.unshift(entry); if(data.econ.log.length>30)data.econ.log.length=30;
   data.econ.year=y+1;
   render(); if(selection)reIns();
-  toast(`Прошёл год ${y}. Запасы пересчитаны${short?` · нехватка по ${short} позициям — см. журнал`:""}`);
+  toast(`Прошёл год ${y}. Запасы пересчитаны${short?` · нехватка по ${short} позициям`:""}${techDoneN?` · изучено технологий: ${techDoneN}`:""}`);
 }
 
 /* ---- механика заводов: входы и выходы каждого типа ---- */
@@ -4190,7 +4674,8 @@ $("#btnTools").addEventListener("click",()=>{
     <div class="hint" style="margin-top:0">Год партии: <b style="color:var(--brass)">${data.econ.year}</b>. «Прошёл год» применяет годовой итог каждого ресурса к запасам всех государств.</div>
     <div class="btnrow"><button id="gt_year" class="primary" title="Применить доходы и расходы за год ко всем государствам">⏭ Прошёл год</button>
       <button id="gt_econ" title="Пул ресурсов, модификаторы, прибавки, снабжение">💰 Экономика</button>
-      <button id="gt_rec" title="Что потребляют и выпускают заводы каждого типа">⚙ Механика заводов</button></div>
+      <button id="gt_rec" title="Что потребляют и выпускают заводы каждого типа">⚙ Механика заводов</button>
+      <button id="gt_tech" title="Дерево технологий, военные возможности и указы НИЦ">🔬 Исследования</button></div>
     <h3 class="sec">Просмотр глазами игрока</h3>
     <div class="hint" style="margin-top:0">Карта покажет ровно то, что видит выбранный игрок: чужие войска, скрытые месторождения и закрытые театры исчезнут. Выход - кнопка в красной полосе сверху.</div>
     ${data.players.length?`<label>Игрок</label><select id="gt_p">${data.players.map(p2=>`<option value="${p2.id}">${esc(p2.name)}</option>`).join("")}</select>
@@ -4205,6 +4690,7 @@ $("#btnTools").addEventListener("click",()=>{
   m.querySelector("#gt_year").onclick=()=>{closeModal();confirmYear();};
   m.querySelector("#gt_econ").onclick=()=>{closeModal();openEconPanel();};
   m.querySelector("#gt_rec").onclick=()=>{closeModal();openRecipes();};
+  m.querySelector("#gt_tech").onclick=()=>{closeModal();openResearch();};
   m.querySelector("#gt_dice").onclick=()=>{closeModal();openDice();};
   m.querySelector("#gt_ruler").onclick=()=>{closeModal();setTool("ruler");};
   const pv=m.querySelector("#gt_prev");
@@ -4226,7 +4712,17 @@ $("#btnReset").addEventListener("click",()=>{
 });
 $("#btnHelp").addEventListener("click",()=>{
   openModal("Помощь · v"+APP_VER,`
-    <h3 class="sec" style="margin-top:0">Что нового в v3.2</h3>
+    <h3 class="sec" style="margin-top:0">Что нового в v3.3</h3>
+    <div class="hint">
+      · Исследования (🔬 Наука в верхней панели). Дерево повторяет конструктор «Дерево технологий»: те же разделы, тиры и условия, включая правило двух технологий предыдущего тира. ГМ отмечает изученное вручную или переносит готовое дерево кнопкой «Загрузить дерево из файла» — берётся json, выгруженный конструктором; неизвестные id пропускаются.<br>
+      · Военные возможности пяти семейств: стрелковое, артиллерия, танки, самолёты, корабли. Тир открывает весь класс разом и даёт множитель атаки и защиты: Т0 ×1.0, Т1 ×1.2, Т2 ×1.45, Т3 ×1.75, Т4 ×2.1. Множитель входит в расчёт линии фронта: соединение давит на местность сильнее.<br>
+      · Военные технологии складываются с тиром (не перемножаются). Постоянные баффы — магазинные винтовки, станковые пулемёты, самозарядные, автоматы, калиброванные стволы, радиолокация — считаются автоматически; условные (штурм городов, ночь, бой с танками) записаны в описании и остаются на отыгрыш ГМа.<br>
+      · Промышленные технологии меняют экономику: сталь +5% и +20%, все фабрики +10%, военные фабрики +10%, алюминий +20%, уголь на фабриках −10%, добыча руд и угля +10%, авиа- и танковые заводы −10% расхода, стройматериалы на постройку −10%. Без «Электричества» фабрики свыше десятой работают вполсилы, без «Базовых станков» тяжёлую промышленность строить нельзя.<br>
+      · НИЦ — постройка на карте за 10> («Академия наук» делает каждый следующий дешевле на 3>). Больше одного НИЦ страна содержит только с «Университетом». Каждый НИЦ ведёт один указ: технология набирает очки за год, «Прошёл год» двигает все указы и записывает изученное в журнал.<br>
+      · Скорость исследований: скрытый коэффициент страны (виден только ГМу и вырезан из сборки игрока), видимый модификатор от технологий и ручная надбавка ГМа за образование, финансирование и отыгрыш.<br>
+      · Фабрики ТНП выпускают 1 товар в год. Станкостроительные заводы убраны из игры — в старых сохранениях просто не учитываются.<br>
+    </div>
+    <h3 class="sec">v3.2</h3>
     <div class="hint">
       · Производственные цепочки по правилам партии: сталелитейный и алюминиевый заводы (10 руды + 4 угля → 10 металла), НПЗ (10 нефти + 2 угля → 12 топлива), фабрика стройматериалов (10 дерева → 10 стройматериалов), винтовок (4 стали + 4 угля → 40к), пушек (6 стали + 6 угля → 500), доп. оснащения (3 стали → 10к), автотранспортный (6 стали, 4 угля, 2 нефти, 1 каучук → 500 машин), самолётов, танков и верфь — по своим расходам. Выпуск самолётов, танков и кораблей пока заготовка — впиши в «Механике заводов».<br>
       · Деньги (>) — новый ресурс казны. Постройка стоит: ТНП — 1> и 15 стройматериалов, тяжёлая промышленность и НПЗ — 2> и 20, военные заводы и верфи — 3> и 25, аэродром — 1>. Стоимость списывается с запасов государства-владельца провинции; галочка «Платно» в карточке провинции или в «Механике заводов» отключает списание, чтобы бесплатно расставить уже существующие заводы.<br>
@@ -4320,6 +4816,7 @@ $("#btnHelp").addEventListener("click",()=>{
       2. Заведи государства и игроков с кодами.<br>
       3. ⬠ провинции · ◉ города · ▣ дивизии · ✈ постройки. Всё редактируется в панели справа. В карточке провинции — добывающие точки и предприятия.<br>
       3а. 💰 Экономика: запасы, снабжение, модификаторы и прибавки государств; ⏭ «Прошёл год» в конце игрового года.<br>
+      3б. 🔬 Наука: дерево технологий государства, военные возможности, указы НИЦ. Готовое дерево переносится файлом из конструктора.<br>
       4. «Сохранить» — мастер-файл. «Сборка игроку» — персональный файл со срезанным скрытым.<br>
       5. Игроку отправь: этот HTML + его сборку + файлы карт.
     </div>

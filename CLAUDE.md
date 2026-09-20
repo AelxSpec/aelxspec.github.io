@@ -13,6 +13,7 @@
 - Правки данных: перед изменением `snapshot()` (undo), после — `markDirty()`.
 - Экономика (v3.1): `data.econ` = `{year, recipes, nat:{[nid]:{cap,mods,need,adds}}, log}`; в провинции `stats.mines` (добывающие точки) и `stats.fabs` (предприятия). Расчёт — `econCalc(nid)`, столица пула — `econCap(nid)`, запасы — `stockGet/stockSet` (оружие и техника лежат в `data.stocks.eq`, прочее в `data.stocks.res`). Цепочки заводов по умолчанию — `DEF_RECIPES` (заготовка, ГМ правит в «Механике заводов»).
 - Всплывающие подсказки: любой `title` автоматически превращается в маленькое окошко (`#tip`); `data-tipres="nid|res"` — справка по ресурсу.
+- Исследования (v3.3): `data.research.nat[nid]` = `{done:{techId:true}, base (скрытый коэф., вырезается из сборки), mod, projects:[{id,prog}], note}`. Дерево — константа `TECHS`: те же id, ветки и условия, что в конструкторе «tech-tree», поэтому его json (`{done:[...]}`) импортируется как есть (`importTechFile`). Правила: `techOpen`, `techGate` (два из предыдущего тира), `techSpecial` (`#base`, `#shipyard`, `#oil`, `#capT4` считаются по карте). Эффекты: `techEcon` (экономика, применяется в `econCalc`), `combatMul` (тир + военные баффы, применяется в `unitWeight`), `techSpd`/`techSpeed` (скорость, применяется в `passYear`). Баффы складываются, а не перемножаются. Новые технологии добавляются в `TECHS`; числовой эффект — поля `fx`/`buff`/`spd`, только для уже существующих в программе механик.
 
 ## Запуск
 
