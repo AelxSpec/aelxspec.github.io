@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>ВПИ · Штабная карта · v3.3</title>
+<title>ВПИ · Штабная карта · v4.0</title>
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><rect width='64' height='64' rx='10' fill='%231c1f26'/><rect x='3.5' y='3.5' width='57' height='57' rx='8' fill='none' stroke='%238a7340' stroke-width='2'/><path d='M32 8 L37 27 L56 32 L37 37 L32 56 L27 37 L8 32 L27 27 Z' fill='%23c9a25a'/><path d='M32 8 L37 27 L32 32 Z' fill='%23e8d9a8'/><circle cx='32' cy='32' r='8.5' fill='%2314161a' stroke='%23c9a25a' stroke-width='2'/><text x='32' y='37.5' font-family='Georgia,serif' font-size='12' font-weight='bold' text-anchor='middle' fill='%23e8d9a8'>&#x412;</text></svg>">
 <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><rect width='64' height='64' rx='10' fill='%231c1f26'/><rect x='3.5' y='3.5' width='57' height='57' rx='8' fill='none' stroke='%238a7340' stroke-width='2'/><path d='M32 8 L37 27 L56 32 L37 37 L32 56 L27 37 L8 32 L27 27 Z' fill='%23c9a25a'/><path d='M32 8 L37 27 L32 32 Z' fill='%23e8d9a8'/><circle cx='32' cy='32' r='8.5' fill='%2314161a' stroke='%23c9a25a' stroke-width='2'/><text x='32' y='37.5' font-family='Georgia,serif' font-size='12' font-weight='bold' text-anchor='middle' fill='%23e8d9a8'>&#x412;</text></svg>">
 <meta name="theme-color" content="#1c1f26">
@@ -223,6 +223,9 @@
   .tgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(270px,1fr));gap:0 10px}
   .bar{height:6px;background:#15181d;border:1px solid var(--line);border-radius:3px;overflow:hidden;margin:3px 0}
   .bar i{display:block;height:100%;background:var(--brass)}
+  .tabs{display:flex;gap:4px;flex-wrap:wrap;border-bottom:1px solid var(--line);margin:4px 0 10px;padding-bottom:6px}
+  .tabs button{border-radius:3px 3px 0 0}
+  .tabs button.on{background:var(--brass);color:#14161a;border-color:var(--brass);font-weight:bold}
   #toast{box-shadow:0 8px 24px rgba(0,0,0,.45);border-radius:3px}
 </style>
 </head>
@@ -244,13 +247,14 @@
     <button id="btnSaveAs" title="Сохранить в новый файл">Сохранить как…</button>
     <span id="dirtyMark" style="color:var(--brass);font-size:11px;display:none">● не сохранено</span>
     <button id="btnSnapshot" title="Сохранить карту в изображение в полном разрешении">📷 Снимок</button>
-    <button id="btnEcon" title="Экономика государства: запасы, добыча, заводы, баланс за год">💰 Экономика</button>
+    <button id="btnEcon" title="Кабинет государства: бюджет, ресурсы, силы, смена года, доступы">🏛 Кабинет</button>
     <button id="btnTech" title="Исследования: дерево технологий, военные возможности, указы НИЦ">🔬 Наука</button>
     <button id="btnExport" class="gm-only" title="Выгрузить персональный файл игрока — всё скрытое от него вырезано">📦 Сборка игроку</button>
     <button id="btnWar" class="gm-only" title="Театры военных действий: баланс сил, фронт, котлы">⚔ Война</button>
     <button id="btnTools" class="gm-only" title="Инструменты ГМа: поиск, кубик, взгляд игрока, «Прошёл год»">🧰 Инструменты</button>
     <button id="btnCountry" class="gm-only" title="Панель страны: войска, штаты, снаряжение, сверка со стат-листом">🏛 Страна</button>
     <button id="btnSettings" class="gm-only" title="Настройки партии: карта, государства, игроки, размеры значков">⚙ Настройки</button>
+    <button id="btnSync" style="display:none" title="Проверить обновления, а у ГМа — опубликовать правки на сайт">🔄 Синхронизация</button>
     <button id="btnReset" title="Вернуть панели, слои и масштаб в исходное состояние">⟲ Сброс</button>
     <button id="btnHelp" title="Справка, горячие клавиши и что нового">? Помощь</button>
     <span style="flex:1"></span>
@@ -321,7 +325,7 @@
    общий пул ресурсов в столице, модификаторы, прибавки, снабжение,
    «Прошёл год». Плавная навигация, подсказки, карточка провинции.
    ============================================================= */
-const APP_VER="3.3", DATA_VER=8;
+const APP_VER="4.0", DATA_VER=9;
 
 /* экономика: ключ, название, группа (ind — промышленные, mil — военные) */
 const ECON_RES = [
@@ -336,13 +340,16 @@ const ECON_RES = [
 ];
 const ECON_GROUPS = [["fin","Казна"],["ind","Промышленные"],["mil","Военные"]];
 const resName = k => ECON_RES.find(r=>r[0]===k)?.[1]||k;
+const resGroup = k => ECON_RES.find(r=>r[0]===k)?.[2]||"ind";
+/* промышленные ресурсы — поток за год, они не копятся; казна и военные склады копятся */
+const accumRes = k => resGroup(k)!=="ind";
 /* что можно добывать на добывающей точке */
 const RAW_RES = ["iron","alumore","coal","oil","wood","rubber","gold"];
 /* совместимость со старым кодом и сверкой: только сырьё и полуфабрикаты */
 const RESOURCES = ECON_RES.filter(r=>r[2]==="ind"&&!/^goods/.test(r[0])).map(r=>[r[0],r[1]]);
 /* производственные цепочки по правилам партии: сколько одно предприятие потребляет и выпускает за год.
    Выпуск самолётов, танков, кораблей, станков, взрывчатки и ТНП правилами пока не задан — стоят заготовки.
-   ГМ правит цифры в «💰 Экономика → Механика заводов». */
+   ГМ правит цифры в «🏛 Кабинет → Механика заводов». */
 const DEF_RECIPES = {
   steel:{in:{iron:10,coal:4},out:{steel:10}},             alum:{in:{alumore:10,coal:4},out:{alum:10}},
   build:{in:{wood:10},out:{build:10}},                     refinery:{in:{oil:10,coal:2},out:{fuel:12}},
@@ -587,7 +594,7 @@ const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&
 
 function newData(){
   return migrate({
-    meta:{name:"ВПИ", gmCode:"", lockedRole:null, mapHint:"", underlayHints:{}, iconScale:{div:100,city:100,struct:100,dep:100,rail:100,road:100}, defRadius:{supply:600,air:900}, hideDivLabels:[], version:DATA_VER},
+    meta:{name:"ВПИ", gmCode:"", gmLogin:"gm", lockedRole:null, mapHint:"", underlayHints:{}, iconScale:{div:100,city:100,struct:100,dep:100,rail:100,road:100}, defRadius:{supply:600,air:900}, hideDivLabels:[], version:DATA_VER},
     nations:[{id:uid(),name:"Юхэйдо",color:"#b8503f"},{id:uid(),name:"Виктория",color:"#3f6db8"},{id:uid(),name:"Раймс",color:"#8a5fb0"},{id:uid(),name:"РСМ",color:"#c23b3b"}],
     players:[], provinces:[], cities:[], divisions:[], structures:[], deposits:[], rails:[], roads:[], zones:[], arrows:[], theatres:[], templates:[], stocks:{res:{},eq:{}}, statRef:{},
     econ:{year:1, recipes:{}, nat:{}, log:[]}, research:{nat:{}}
@@ -610,8 +617,13 @@ function migrate(d){
   d.meta.iconScale = Object.assign({div:100,city:100,struct:100,dep:100,rail:100,road:100}, d.meta.iconScale||{});
   d.meta.defRadius = Object.assign({supply:600,air:900}, d.meta.defRadius||{});
   d.meta.hideDivLabels = Array.isArray(d.meta.hideDivLabels)?d.meta.hideDivLabels:[];  /* державы, чьи соединения без подписей */
+  d.meta.gmLogin = (d.meta.gmLogin||"gm").trim()||"gm";   /* логин ГМа для входа с сайта */
+  d.meta.rev = +d.meta.rev||0;                            /* ревизия публикации */
+  d.meta.mapsPub = d.meta.mapsPub||{};                    /* какие карты уже выложены */
   d.meta.version = DATA_VER;
-  d.nations=d.nations||[]; d.players=d.players||[];
+  d.nations=d.nations||[];
+  /* у игрока теперь есть логин для входа на сайте */
+  d.players=(d.players||[]).map(p=>({id:p.id||uid(),name:p.name||"Игрок",code:p.code||"",login:(p.login||"").trim(),nationId:p.nationId||null}));
   d.provinces=(d.provinces||[]).map(p=>({
     id:p.id||uid(), name:p.name||"Провинция", points:p.points||[], nationId:p.nationId||null,
     vis:p.vis??"all",
@@ -674,7 +686,8 @@ function migrate(d){
   e.recipes=rc;
   const nat={};
   for(const [k,v] of Object.entries(e.nat||{}))
-    nat[k]={cap:v?.cap||null,mods:v?.mods||{},need:v?.need||{},adds:Array.isArray(v?.adds)?v.adds.map(a=>({id:a.id||uid(),res:a.res||"coal",amt:+a.amt||0,note:a.note||""})):[]};
+    nat[k]={cap:v?.cap||null,mods:v?.mods||{},need:v?.need||{},brief:v?.brief||"",
+      adds:Array.isArray(v?.adds)?v.adds.map(a=>({id:a.id||uid(),res:a.res||"coal",amt:+a.amt||0,note:a.note||"",once:!!a.once})):[]};
   e.nat=nat;
   e.log=Array.isArray(e.log)?e.log:[];
   /* v3.2: заготовки v3.1, которые ГМ не трогал, заменяются правилами партии */
@@ -685,6 +698,10 @@ function migrate(d){
   }
   /* v3.3: станкостроительный завод убран из игры — старые постройки просто не считаются */
   delete e.recipes.tools;
+  /* v4.0: промышленные ресурсы больше не копятся — старые «запасы» по ним убираем */
+  for(const box of ["res","eq"])
+    for(const st of Object.values(d.stocks?.[box]||{}))
+      for(const k of Object.keys(st)) if(ECON_RES.some(r=>r[0]===k)&&!accumRes(k)) delete st[k];
   const co=JSON.parse(JSON.stringify(DEF_COSTS));
   for(const [k,v] of Object.entries(e.costs||{})) co[k]={...v};
   e.costs=co;
@@ -962,36 +979,41 @@ function resTipHtml(nid,k){
     <div>(${parts.join(" + ")})${r.mod?` × ${rnd(1+r.mod/100)} <span class="dim">(модификатор ${pmN(r.mod)}%)</span>`:""}
       ${r.add?` ${r.add>0?"+":"−"} прибавки ${fmtN(Math.abs(r.add))}`:""} − потребление ${fmtN(r.fin)} − снабжение ${fmtN(r.need)}
       = <b class="${sgnC(r.net)}">${pmN(r.net)||"0"}</b></div>
-    <div class="dim">Запас ${fmtN(r.stock)} → через год ${fmtN(Math.max(0,r.stock+r.net))}${r.stock+r.net<0?` <span class="minus">(нехватка ${fmtN(-(r.stock+r.net))})</span>`:""}</div>`;
+    ${accumRes(k)
+      ?`<div class="dim">Запас ${fmtN(r.stock)} → через год ${fmtN(Math.max(0,r.stock+r.net))}${r.stock+r.net<0?` <span class="minus">(нехватка ${fmtN(-(r.stock+r.net))})</span>`:""}</div>`
+      :`<div class="dim">Ресурс не копится: важен только баланс года.${r.net<0?' <span class="minus">В минусе — производства не хватает.</span>':""}</div>`}`;
 }
-/* таблица пула: компактная (карточка провинции) или полная (окно экономики, edit — поля ГМа) */
+/* две таблицы: промышленность — поток за год, казна и военные склады — запас с приростом */
 function poolTable(nid,opt={}){
-  const R=econCalc(nid), ed=!!opt.edit, full=!!opt.full, e=econNat(nid);
+  const R=econCalc(nid), ed=!!opt.edit, e=econNat(nid);
   const show=k=>{const r=R[k]; return opt.all||(r&&(r.stock||r.net||r.prod||r.fin||r.need||r.add||r.mod));};
-  const cols=full?10:4;
-  let h=`<table class="pool"><tr><th>Ресурс</th><th>Запас</th>`+
-    (full?`<th>Добыча</th><th>Заводы +</th><th>Заводы −</th><th>Мод. %</th><th>Прибавки</th>`:"")+
-    `<th>Снабж.</th><th>Итог/год</th>`+(full?`<th>Через год</th>`:"")+`</tr>`;
-  let any=false;
-  for(const [g,gn] of ECON_GROUPS){
-    const ks=ECON_RES.filter(r=>r[2]===g&&show(r[0]));
-    if(!ks.length)continue; any=true;
-    h+=`<tr class="grp"><td colspan="${cols}">${gn}</td></tr>`;
-    for(const [k,n] of ks){
-      const r=R[k]||{stock:0,mine:0,fout:0,fin:0,mod:0,add:0,need:0,net:0};
-      h+=`<tr data-tipres="${nid}|${k}" data-k="${k}"><td>${n}</td>`+
-        `<td>${ed?`<input data-est="${k}" value="${esc(stockRaw(nid,k))}" placeholder="0">`:fmtN(r.stock)}</td>`+
-        (full?`<td data-c="mine">${r.mine?fmtN(r.mine):"—"}</td><td data-c="fout" class="plus">${r.fout?"+"+fmtN(r.fout):"—"}</td>`+
-          `<td data-c="fin" class="minus">${r.fin?"−"+fmtN(r.fin):"—"}</td>`+
-          `<td>${ed?`<input data-emod="${k}" value="${esc(e.mods?.[k]??"")}" placeholder="0">`:(r.mod?pmN(r.mod)+"%":"—")}</td>`+
-          `<td data-c="add" class="${sgnC(r.add)}">${r.add?pmN(r.add):"—"}</td>`:"")+
-        `<td>${ed?`<input data-eneed="${k}" value="${esc(e.need?.[k]??"")}" placeholder="0">`:(r.need?fmtN(r.need):"—")}</td>`+
-        `<td data-c="net" class="${sgnC(r.net)}">${pmN(r.net)||"0"}</td>`+
-        (full?`<td data-c="next" class="${r.stock+r.net<0?"minus":""}">${fmtN(Math.max(0,r.stock+r.net))}</td>`:"")+`</tr>`;
-    }
-  }
-  if(!any) return '<div class="hint">Ресурсов пока нет: добывающие точки и заводы ставятся в провинциях государства, запасы вписывает ГМ.</div>';
-  return h+"</table>";
+  const mid=(k,r)=>`<td data-c="mine">${r.mine?fmtN(r.mine):"—"}</td>`+
+    `<td data-c="fout" class="plus">${r.fout?"+"+fmtN(r.fout):"—"}</td>`+
+    `<td data-c="fin" class="minus">${r.fin?"−"+fmtN(r.fin):"—"}</td>`+
+    `<td>${ed?`<input data-emod="${k}" value="${esc(e.mods?.[k]??"")}" placeholder="0">`:(r.mod?pmN(r.mod)+"%":"—")}</td>`+
+    `<td data-c="add" class="${sgnC(r.add)}">${r.add?pmN(r.add):"—"}</td>`+
+    `<td>${ed?`<input data-eneed="${k}" value="${esc(e.need?.[k]??"")}" placeholder="0">`:(r.need?fmtN(r.need):"—")}</td>`+
+    `<td data-c="net" class="${sgnC(r.net)}">${pmN(r.net)||"0"}</td>`;
+  const row=(k,n)=>{
+    const r=R[k]||{stock:0,mine:0,fout:0,fin:0,mod:0,add:0,need:0,net:0};
+    return `<tr data-tipres="${nid}|${k}" data-k="${k}"><td>${n}</td>`+
+      (accumRes(k)?`<td>${ed?`<input data-est="${k}" value="${esc(stockRaw(nid,k))}" placeholder="0">`:fmtN(r.stock)}</td>`:"")+
+      mid(k,r)+
+      (accumRes(k)?`<td data-c="next" class="${r.stock+r.net<0?"minus":""}"><b>${fmtN(Math.max(0,r.stock+r.net))}</b></td>`:"")+`</tr>`;
+  };
+  const head=stock=>`<tr><th>Ресурс</th>${stock?"<th>Запас</th>":""}<th>Добыча</th><th>Заводы +</th><th>Заводы −</th>`+
+    `<th>Мод. %</th><th>Прибавки</th><th>Снабж.</th><th>Итог/год</th>${stock?"<th>Через год</th>":""}</tr>`;
+  const flow=ECON_RES.filter(r=>!accumRes(r[0])&&show(r[0]));
+  const keep=ECON_GROUPS.filter(([g])=>g!=="ind").map(([g,gn])=>[gn,ECON_RES.filter(r=>r[2]===g&&show(r[0]))]).filter(x=>x[1].length);
+  let h="";
+  if(flow.length)
+    h+=`<div class="hint" style="margin:6px 0 2px">Промышленность: не копится, важен баланс года</div>`+
+       `<table class="pool">${head(false)}${flow.map(r=>row(r[0],r[1])).join("")}</table>`;
+  if(keep.length)
+    h+=`<div class="hint" style="margin:10px 0 2px">Казна и военные склады: копятся из года в год</div>`+
+       `<table class="pool">${head(true)}${keep.map(([gn,ks])=>
+         `<tr class="grp"><td colspan="10">${gn}</td></tr>`+ks.map(r=>row(r[0],r[1])).join("")).join("")}</table>`;
+  return h||'<div class="hint">Ресурсов пока нет: добывающие точки и заводы ставятся в провинциях государства, запасы вписывает ГМ.</div>';
 }
 /* живое обновление вычисляемых ячеек без перерисовки полей ввода */
 function refreshPool(box,nid){
@@ -1001,7 +1023,8 @@ function refreshPool(box,nid){
     const set=(c,t,cls)=>{const td=tr.querySelector(`[data-c="${c}"]`); if(td){td.textContent=t; if(cls!==undefined)td.className=cls;}};
     set("mine",r.mine?fmtN(r.mine):"—"); set("fout",r.fout?"+"+fmtN(r.fout):"—"); set("fin",r.fin?"−"+fmtN(r.fin):"—");
     set("add",r.add?pmN(r.add):"—",sgnC(r.add)); set("net",pmN(r.net)||"0",sgnC(r.net));
-    set("next",fmtN(Math.max(0,r.stock+r.net)),r.stock+r.net<0?"minus":"");
+    const nx=tr.querySelector('[data-c="next"]');
+    if(nx){nx.innerHTML="<b>"+fmtN(Math.max(0,r.stock+r.net))+"</b>";nx.className=r.stock+r.net<0?"minus":"";}
   });
 }
 
@@ -2552,7 +2575,6 @@ window.fieldChanged=()=>{
     p.vis=readVis("f_vis");
     $("#f_vis_list").style.display=$("#f_vis").value==="list"?"":"none";
     if(natChanged){render();reIns();return;}
-    refreshInsPool(p);
   }
   if(s.kind==="city"){
     const c=data.cities.find(x=>x.id===s.id);if(!c)return;
@@ -2755,7 +2777,7 @@ function provEconEditor(p){
     <div class="hint" id="f_newfabh" style="margin-top:2px">${esc(facInfo(FACTORIES[0][0]))}</div>
     <div class="checkrow" title="Постройка списывает деньги и стройматериалы с запасов государства-владельца. Сними, чтобы расставлять уже существующие заводы бесплатно."><input type="checkbox" ${data.econ.chargeBuild?'checked':''} onchange="data.econ.chargeBuild=this.checked;markDirty()"> Платно: списывать стоимость постройки с запасов</div>
     <label>Примечание к промышленности</label><textarea id="f_fab" oninput="fieldChanged()">${esc(p.stats.fab)}</textarea>
-    <div class="hint">Всё это видят только ГМ и государство-владелец. Наведи на предприятие — увидишь, что оно потребляет и выпускает. Цифры цепочек — «💰 Экономика → Механика заводов».</div>`;
+    <div class="hint">Всё это видят только ГМ и государство-владелец. Наведи на предприятие — увидишь, что оно потребляет и выпускает. Цифры цепочек — «🏛 Кабинет → Механика заводов».</div>`;
 }
 function provEconView(p){
   const mines=(p.stats.mines||[]).filter(m=>+m.amt), fabs=(p.stats.fabs||[]).filter(f=>num(f.count));
@@ -2769,15 +2791,16 @@ function provEconView(p){
       ${fabs.map(f=>`<tr title="${esc(recipeText(f.type))}"><td>${esc(facLabel(f.type))}</td><td>${esc(f.count)}</td></tr>`).join("")}</table>`:""}
     ${p.stats.fab?`<pre>${esc(p.stats.fab)}</pre>`:""}</div>`;
 }
+/* сводка государства переехала в кабинет: в столице осталась только ссылка на него */
 function provPoolCard(p){
   const nid=p.nationId;
-  if(!nid||!canSeeNationEcon(nid)||econCap(nid)?.id!==p.id)return "";
-  return `<h3 class="sec">◈ Пул ресурсов · ${esc(nation(nid)?.name||"")} · год ${data.econ.year}</h3>
-    <div id="insPool">${poolTable(nid)}</div>
-    <div class="hint">Наведи на ресурс — откуда он приходит, куда уходит и как считается итог за год.</div>
-    <div class="btnrow"><button onclick="openEconPanel('${nid}')" title="Полная таблица: запасы, модификаторы, прибавки, снабжение">💰 Вся экономика государства</button></div>`;
+  if(!nid||!canSeeNationEcon(nid))return "";
+  const cap=econCap(nid)?.id===p.id;
+  return `<div class="btnrow" style="margin-top:10px"><button class="${cap?"primary":""}" onclick="openCabinet('${nid}')"
+    title="Бюджет, ресурсы, силы, журнал лет${role.gm?", доступы игроков и публикация":""}">🏛 Кабинет «${esc(nation(nid)?.name||"")}»</button></div>
+    ${cap?'<div class="hint">Это столица государства: вся сводка по державе — в кабинете.</div>':""}`;
 }
-function refreshInsPool(p){ const b=$("#insPool"); if(b&&p.nationId)b.innerHTML=poolTable(p.nationId); }
+function refreshInsPool(){}
 /* перерисовать карточку, не теряя прокрутку */
 function reIns(){ const b=$("#insBody"), st=b.scrollTop; renderInspector(); b.scrollTop=st; }
 const selProv=()=>selection?.kind==="province"?data.provinces.find(x=>x.id===selection.id):null;
@@ -3205,8 +3228,9 @@ $("#btnLayers").addEventListener("click",()=>{
 });
 
 /* ---- подложки режимов: своя картинка под каждый фильтр ---- */
-function attachUnderlay(mode,file){
+function attachUnderlay(mode,file,name){
   const url=URL.createObjectURL(file);
+  name=name||file.name||mode;
   let el=document.querySelector(`#world img.under[data-mode="${mode}"]`);
   if(!el){
     el=document.createElement("img");
@@ -3216,9 +3240,10 @@ function attachUnderlay(mode,file){
   el.onload=()=>{
     if(mapLoaded){el.width=img.naturalWidth;el.height=img.naturalHeight;}
     underlays[mode]=url;
-    data.meta.underlayHints[mode]=file.name;
+    data.meta.underlayHints[mode]=name;
     updateBackgrounds();render();buildMini();
     toast(`Подложка «${MODES.find(m=>m[0]===mode)[1]}» подключена`);
+    if(data.meta.mapsPub&&data.meta.mapsPub["under_"+mode])delete data.meta.mapsPub["under_"+mode];
   };
   el.src=url;
 }
@@ -3682,6 +3707,7 @@ function pickMap(cb){
       document.querySelectorAll("#world img.under").forEach(el=>{el.width=img.naturalWidth;el.height=img.naturalHeight;});
       mapLoaded=true;$("#nomap").style.display="none";
       data.meta.mapHint=f.name;
+      if(data.meta.mapsPub)delete data.meta.mapsPub.main;   /* новая карта — выложить заново */
       zoomFit();updateBackgrounds();showMini();if(cb)cb();
     };
     img.src=url;
@@ -3712,7 +3738,8 @@ $("#btnSettings").addEventListener("click",()=>{
 
   const m=openModal("Настройки партии",`
     <label>Название партии</label><input id="set_name" value="${esc(data.meta.name)}">
-    <label>Код ГМа (спрашивается при входе в мастер-файл)</label><input id="set_gm" value="${esc(data.meta.gmCode)}" placeholder="пусто = без кода">
+    <label>Код ГМа (вход в мастер-файл и на сайт)</label><input id="set_gm" value="${esc(data.meta.gmCode)}" placeholder="пусто = без кода">
+    <label>Логин ГМа на сайте</label><input id="set_gmlogin" value="${esc(data.meta.gmLogin||"gm")}" placeholder="gm">
     <h3 class="sec">Карта</h3>
     <div class="hint">Файлы карт не хранятся в сохранении — подключай при каждом запуске.<br>Основная: <b style="color:var(--brass)">${esc(data.meta.mapHint||"не подключена")}</b> · Подложки — кнопка «🗺 Фоны» сверху.</div>
     <div class="btnrow"><button id="set_map">🗺 Подключить основную карту</button></div>
@@ -3744,6 +3771,7 @@ $("#btnSettings").addEventListener("click",()=>{
   /* поля окна записываются в данные и перед перерисовкой окна: добавление игрока не стирает набранное */
   function collect(){
     data.meta.name=m.querySelector("#set_name").value;data.meta.gmCode=m.querySelector("#set_gm").value;
+    data.meta.gmLogin=(m.querySelector("#set_gmlogin").value||"gm").trim()||"gm";
     data.meta.defRadius={supply:Math.max(0,+m.querySelector("#set_rsup").value||0),air:Math.max(0,+m.querySelector("#set_rair").value||0)};
     const sc=id=>Math.max(10,+m.querySelector(id).value||100);
     data.meta.iconScale={div:sc("#set_sdiv"),city:sc("#set_scity"),struct:sc("#set_sstruct"),dep:sc("#set_sdep"),rail:sc("#set_srail"),road:sc("#set_sroad")};
@@ -3954,8 +3982,8 @@ function openCountryPanel(){
     <div class="btnrow"><button id="cp_pullmap">Взять значения с карты</button><button id="cp_clearref" class="danger">Очистить эталон</button></div>
 
     <h3 class="sec">Ресурсы</h3>
-    <div class="hint" style="margin-top:0">Запасы, добыча, заводы, модификаторы и снабжение теперь ведутся в окне «💰 Экономика». Выпуск оружейных, артиллерийских, автомобильных и танковых заводов пополняет «Всего у страны» в таблице снаряжения ниже при каждом «Прошёл год».</div>
-    <div class="btnrow"><button id="cp_econ">💰 Открыть экономику государства</button></div>
+    <div class="hint" style="margin-top:0">Запасы, добыча, заводы, модификаторы и снабжение ведутся в «🏛 Кабинете». Выпуск оружейных, артиллерийских, автомобильных и танковых заводов пополняет «Всего у страны» в таблице снаряжения ниже при каждом «Прошёл год».</div>
+    <div class="btnrow"><button id="cp_econ">🏛 Открыть кабинет государства</button></div>
 
     <h3 class="sec">Снаряжение</h3>
     <table class="ledger"><tr><th>Вид</th><th>Всего у страны</th><th>В дивизиях</th><th>Штат</th><th>На складе</th><th>Некомплект</th></tr>${eqRows}</table>
@@ -4032,101 +4060,195 @@ function formationHtml(nid){
   return `<table class="pool"><tr><th>Соединение</th><th style="text-align:left">Штат</th><th>Можно сформировать</th><th style="text-align:left">Ограничение</th></tr>${rows}</table>
     <div class="hint">По запасам государства: люди — из «🏛 Страна → Снаряжение», винтовки, орудия и доп. оснащение — из пула. Доп. оснащение: 1к на дивизию + 0,2к за каждую доп. роту.</div>`;
 }
-function afterEcon(){ const p=selProv(); if(p)refreshInsPool(p); }
-function openEconPanel(nid){
+function afterEcon(){ const p=selProv(); if(p)reInsIfProv(); }
+function reInsIfProv(){ if(selection?.kind==="province")reIns(); }
+/* =============================================================
+   КАБИНЕТ ГОСУДАРСТВА
+   Вся сводка по державе: бюджет и ресурсы, силы, провинции,
+   доступы игроков, журнал лет, смена года и публикация.
+   ГМ видит все государства, игрок — только своё.
+   ============================================================= */
+let cabTab="res";
+function cabAccess(){
+  /* по государству — один вход: логин, код, имя игрока */
+  return data.nations.map(n=>{
+    const pl=data.players.find(p=>p.nationId===n.id)||null;
+    const dup=pl&&pl.login&&data.players.some(x=>x!==pl&&x.login&&x.login.toLowerCase()===pl.login.toLowerCase());
+    return `<tr><td><span style="display:inline-block;width:9px;height:9px;background:${n.color};margin-right:6px;border-radius:2px"></span>${esc(n.name)}</td>
+      <td><input data-plog="${n.id}" value="${esc(pl?.login||"")}" placeholder="логин" style="text-align:left"${dup?' style="border-color:var(--red)"':""}></td>
+      <td><input data-pcode="${n.id}" value="${esc(pl?.code||"")}" placeholder="код" style="text-align:left"></td>
+      <td><input data-pname="${n.id}" value="${esc(pl?.name||"")}" placeholder="имя игрока" style="text-align:left"></td>
+      <td class="${pl&&pl.login&&pl.code?"ok":"dim"}">${dup?'<span class="no">логин занят</span>':(pl&&pl.login&&pl.code?"готов":"нет входа")}</td></tr>`;
+  }).join("");
+}
+function cabWriteAccess(body){
+  /* поля доступа пишутся в игроков: запись заводится, как только что-то введено */
+  let touched=false;
+  for(const n of data.nations){
+    const g=s=>body.querySelector(`[data-${s}="${n.id}"]`);
+    const lg=(g("plog")?.value||"").trim(), cd=(g("pcode")?.value||"").trim(), nm=(g("pname")?.value||"").trim();
+    let pl=data.players.find(p=>p.nationId===n.id);
+    if(!pl&&!(lg||cd||nm))continue;
+    if(!pl){ pl={id:uid(),name:nm||("Игрок "+n.name),code:cd,login:lg,nationId:n.id}; data.players.push(pl); touched=true; }
+    if(pl.login!==lg||pl.code!==cd||pl.name!==(nm||pl.name)){ pl.login=lg; pl.code=cd; if(nm)pl.name=nm; touched=true; }
+  }
+  if(touched)markDirty();
+  return touched;
+}
+function openCabinet(nid,tab){
   if(!data)return;
   const gm=!!role.gm;
   const list=gm?data.nations:data.nations.filter(n=>n.id===myNation());
   if(!list.length){toast(gm?"Сначала заведи государства в Настройках":"Тебе не назначено государство");return;}
   nid=(nid&&list.some(n=>n.id===nid))?nid:(econNation&&list.some(n=>n.id===econNation)?econNation:list[0].id);
   econNation=nid;
-  const m=openModal("Экономика государства","",[["Закрыть","primary",closeModal]],"wide");
+  if(tab)cabTab=tab;
+  if(!gm&&cabTab==="acc")cabTab="res";
+  const m=openModal("Кабинет государства","",[["Закрыть","primary",closeModal]],"wide");
   const body=m.querySelector(".mbody");
   const q=s=>body.querySelector(s);
+  const TABS=[["res","Ресурсы и бюджет"],["force","Вооружённые силы"],["prov","Провинции"],["log","Журнал лет"]].concat(gm?[["acc","Доступ игроков"],["sync","Сайт"]]:[]);
   const draw=()=>{
     if(!m.isConnected)return;
     const e=econNat(nid), cap=econCap(nid), provs=data.provinces.filter(p=>p.nationId===nid);
-    const rowsP=provs.filter(p=>(p.stats.mines||[]).some(x=>+x.amt)||(p.stats.fabs||[]).some(f=>num(f.count))).map(p=>
-      `<tr data-pv="${p.id}" style="cursor:pointer" title="Показать провинцию на карте"><td>${cap?.id===p.id?"◈ ":""}${esc(p.name)}</td>
-        <td style="text-align:left;white-space:normal">${(p.stats.mines||[]).filter(x=>+x.amt).map(x=>esc(resName(x.res))+" "+fmtN(x.amt)).join(", ")||"—"}</td>
-        <td style="text-align:left;white-space:normal">${(p.stats.fabs||[]).filter(f=>num(f.count)).map(f=>esc(facLabel(f.type))+" ×"+esc(f.count)).join(", ")||"—"}</td></tr>`).join("");
-    const logs=(data.econ.log||[]).filter(l=>l.nat?.[nid]||l.tech?.[nid]).slice(0,6);
+    const R=econCalc(nid), money=R.money||{stock:0,net:0};
     const sc=body.scrollTop;
-    body.innerHTML=`
-      <div class="list-row" style="margin-bottom:6px">
-        ${gm?`<select id="ec_nat" style="flex:1" title="Государство">${list.map(n=>`<option value="${n.id}" ${n.id===nid?'selected':''}>${esc(n.name)}</option>`).join("")}</select>`
-            :`<b style="flex:1;font-family:var(--serif);font-size:15px;color:${nation(nid)?.color||"var(--ink)"}">${esc(nation(nid)?.name||"")}</b>`}
-        <span class="pill" style="font-size:11px;padding:3px 8px;flex:0 0 auto" title="Счётчик лет партии: растёт при каждом «Прошёл год»">год ${data.econ.year}</span>
-      </div>
-      <div class="list-row"><span style="flex:0 0 auto;color:var(--ink-dim);font-size:11px;letter-spacing:.05em">СТОЛИЦА ЭКОНОМИКИ</span>
-        ${gm?`<select id="ec_cap" style="flex:1" title="Провинция, в карточке которой показывается пул государства">
-              <option value="">авто — ${esc(!e.cap&&cap?cap.name:"столичный город или крупнейшая провинция")}</option>
-              ${provs.map(p=>`<option value="${p.id}" ${e.cap===p.id?'selected':''}>${esc(p.name)}</option>`).join("")}</select>`
-            :`<span style="flex:1">${esc(cap?.name||"—")}</span>`}
-        ${cap?`<button id="ec_go" title="Показать провинцию на карте">◎ На карте</button>`:""}
-      </div>
-      ${gm?`<div class="btnrow" style="margin-top:6px">
-        <button id="ec_year" class="primary" title="Применить итог за год к запасам всех государств">⏭ Прошёл год</button>
-        <button id="ec_rec" title="Что потребляют и выпускают заводы каждого типа">⚙ Механика заводов</button>
-        <button id="ec_all" title="Показать в таблице все ресурсы, чтобы вписать запасы или снабжение">${econShowAll?"Только ненулевые":"Все ресурсы"}</button></div>`:""}
-      <div id="ec_pool">${poolTable(nid,{full:true,edit:gm,all:gm&&econShowAll})}</div>
-      <div class="hint">Итог/год = (добыча + выпуск заводов) × (1 + модификатор %) + прибавки − потребление заводов − снабжение. Наведи на строку — откуда приходит и куда уходит ресурс.
-        ${gm?"Запас, модификатор и снабжение правятся прямо в таблице и сразу пересчитываются.":""}</div>
-      <h3 class="sec">Прибавки и убыли</h3>
-      <div class="hint" style="margin-top:0">Торговля, дань, особые приросты и потери — постоянная прибавка к ресурсу каждый год (убыль — со знаком минус).</div>
-      <div id="ec_adds">${(e.adds||[]).map(a=>gm
-        ?`<div class="rowx"><select data-ar="${a.id}" style="flex:0 0 180px">${resOptions(a.res)}</select>
-            <input class="q" type="number" step="any" data-aa="${a.id}" value="${a.amt}" title="В год; убыль — со знаком минус">
-            <input data-an="${a.id}" value="${esc(a.note)}" placeholder="Откуда: торговля с …, особый прирост…">
-            <button class="danger" data-ad="${a.id}" title="Убрать прибавку">✕</button></div>`
-        :`<div class="rowx"><span class="lbl">${esc(resName(a.res))} · ${esc(a.note||"прибавка")}</span><span class="io ${sgnC(a.amt)}" style="font-size:12px">${pmN(a.amt)}</span></div>`).join("")
-        ||'<div class="hint">Нет.</div>'}</div>
-      ${gm?`<div class="btnrow"><button id="ec_addadd">+ Прибавка / убыль</button></div>`:""}
-      <h3 class="sec">Формирование дивизий</h3>
-      <div id="ec_form">${formationHtml(nid)}</div>
-      <h3 class="sec">Провинции и предприятия</h3>
-      ${rowsP?`<table class="pool"><tr><th>Провинция</th><th style="text-align:left">Добыча в год</th><th style="text-align:left">Предприятия</th></tr>${rowsP}</table>`
-        :`<div class="hint">В провинциях государства пока нет ни добычи, ни предприятий.${gm?" Они добавляются в карточке провинции.":""}</div>`}
-      <h3 class="sec">Журнал лет</h3>
-      <div class="econlog">${logs.length?logs.map(l=>`<div class="card" style="padding:6px 10px;border-left-color:var(--line)">
+    let inner="";
+    if(cabTab==="res"){
+      inner=`
+        ${gm?`<div class="btnrow" style="margin-top:0">
+          <button id="ec_year" class="primary" title="Пересчитать бюджет, склады и исследования всех государств за год">⏭ Прошёл год</button>
+          <button id="ec_rec" title="Что потребляют и выпускают заводы каждого типа">⚙ Механика заводов</button>
+          <button id="ec_all" title="Показать все ресурсы, чтобы вписать запас, модификатор или снабжение">${econShowAll?"Только ненулевые":"Все ресурсы"}</button>
+          <button id="ec_cap2" title="Какая провинция считается столицей государства">◈ Столица: ${esc(cap?.name||"—")}</button></div>`:""}
+        <div id="ec_pool">${poolTable(nid,{edit:gm,all:gm&&econShowAll})}</div>
+        <div class="hint">Итог за год = (добыча + выпуск заводов) × (1 + модификатор %) + прибавки − потребление заводов − снабжение. Наведи на строку — откуда ресурс приходит и куда уходит.
+          Промышленность не копится: в минусе — значит производства не хватает. Казна и военные склады переносятся на следующий год. Снабжение — постоянный расход, сам он не меняется.</div>
+        <h3 class="sec">Сторонние источники: торговля и события</h3>
+        <div class="hint" style="margin-top:0">Всё, что приходит и уходит помимо заводов и добычи: торговые контракты, дань, помощь союзника, найденное месторождение, потери от блокады. Со знаком минус — убыль. «Разовая» срабатывает на ближайшей смене года и исчезает, остальные действуют каждый год.</div>
+        <div id="ec_adds">${(e.adds||[]).map(a=>gm
+          ?`<div class="rowx"><select data-ar="${a.id}" style="flex:0 0 170px">${resOptions(a.res)}</select>
+              <input class="q" type="number" step="any" data-aa="${a.id}" value="${a.amt}" title="В год; убыль — со знаком минус">
+              <input data-an="${a.id}" value="${esc(a.note)}" placeholder="Откуда: торговля с …, новое месторождение, контрибуция…">
+              <label class="io" style="display:flex;gap:4px;align-items:center;cursor:pointer;flex:0 0 auto" title="Сработает один раз на ближайшей смене года"><input type="checkbox" data-a1="${a.id}" ${a.once?"checked":""} style="width:auto"> разовая</label>
+              <button class="danger" data-ad="${a.id}" title="Убрать">✕</button></div>`
+          :`<div class="rowx"><span class="lbl">${esc(resName(a.res))} · ${esc(a.note||"прибавка")}${a.once?" · разовая":""}</span><span class="io ${sgnC(a.amt)}" style="font-size:12px">${pmN(a.amt)}</span></div>`).join("")
+          ||'<div class="hint">Пока ничего нет.</div>'}</div>
+        ${gm?`<div class="btnrow"><button id="ec_addadd">+ Источник прихода или расхода</button></div>`:""}`;
+    }
+    if(cabTab==="force"){
+      const mine=data.divisions.filter(x=>x.nationId===nid);
+      const byType=DIV_TYPES.map(([k,n,sym])=>[n,sym,mine.filter(x=>x.type===k).length]).filter(r=>r[2]>0);
+      const menNow=divSum(nid,"men"), menLim=limSum(nid,"men");
+      inner=`<div class="statgrid">
+          <div><b>${mine.length}</b><span>соединений</span></div>
+          <div><b>${menNow.toLocaleString("ru")}</b><span>человек в частях</span></div>
+          <div><b>${menLim?menLim.toLocaleString("ru"):"—"}</b><span>по штату</span></div>
+          <div><b>${nicCount(nid)}</b><span>НИЦ</span></div>
+        </div>
+        ${byType.length?`<table class="pool"><tr><th>Род войск</th><th>Соединений</th></tr>
+          ${byType.map(([n,sym,c])=>`<tr><td>${sym} ${n}</td><td>${c}</td></tr>`).join("")}</table>`:'<div class="hint">Соединений нет.</div>'}
+        <h3 class="sec">Формирование дивизий</h3>
+        <div id="ec_form">${formationHtml(nid)}</div>
+        <div class="btnrow"><button id="ec_tech" title="Дерево технологий и военные возможности">🔬 Исследования</button>
+          ${gm?`<button id="ec_country" title="Штаты, снаряжение, сверка со стат-листом">🏛 Панель страны</button>`:""}</div>`;
+    }
+    if(cabTab==="prov"){
+      const rowsP=provs.map(p=>
+        `<tr data-pv="${p.id}" style="cursor:pointer" title="Показать провинцию на карте"><td>${cap?.id===p.id?"◈ ":""}${esc(p.name)}</td>
+          <td style="text-align:left;white-space:normal">${esc(p.stats.pop||"—")}</td>
+          <td style="text-align:left;white-space:normal">${(p.stats.mines||[]).filter(x=>+x.amt).map(x=>esc(resName(x.res))+" "+fmtN(x.amt)).join(", ")||"—"}</td>
+          <td style="text-align:left;white-space:normal">${(p.stats.fabs||[]).filter(f=>num(f.count)).map(f=>esc(facLabel(f.type))+" ×"+esc(f.count)).join(", ")||"—"}</td></tr>`).join("");
+      inner=rowsP?`<table class="pool"><tr><th>Провинция</th><th style="text-align:left">Население</th><th style="text-align:left">Добыча в год</th><th style="text-align:left">Предприятия</th></tr>${rowsP}</table>
+        <div class="hint">Щелчок по строке — перелёт к провинции на карте.${gm?" Добывающие точки и заводы ставятся в её карточке.":""}</div>`
+        :'<div class="hint">У государства нет провинций.</div>';
+    }
+    if(cabTab==="log"){
+      const logs=(data.econ.log||[]).filter(l=>l.nat?.[nid]||l.tech?.[nid]||l.dry?.[nid]||l.once?.[nid]);
+      inner=`<div class="econlog">${logs.length?logs.map(l=>`<div class="card" style="padding:6px 10px;border-left-color:var(--line)">
           <div class="sub" style="margin:0 0 3px">Год ${l.year} · ${esc(l.at||"")}</div>
-          <div style="font-size:11px;line-height:1.7">${l.nat[nid].map(([k,was,net,nv,lack])=>`${esc(resName(k))}: ${fmtN(was)} → <b>${fmtN(nv)}</b> <span class="${sgnC(net)}">(${pmN(net)})</span>${lack?` <span class="minus">нехватка ${fmtN(lack)}</span>`:""}`).join(" · ")}
+          <div style="font-size:11px;line-height:1.7">${(l.nat?.[nid]||[]).map(([k,was,net,nv,lack])=>`${esc(resName(k))}: ${fmtN(was)} → <b>${fmtN(nv)}</b> <span class="${sgnC(net)}">(${pmN(net)})</span>${lack?` <span class="minus">нехватка ${fmtN(lack)}</span>`:""}`).join(" · ")}
+          ${l.dry?.[nid]?.length?`<div class="minus">промышленность в минусе: ${esc(l.dry[nid].map(([k,v])=>resName(k)+" "+pmN(v)).join(", "))}</div>`:""}
+          ${l.once?.[nid]?.length?`<div class="dim">разовое: ${esc(l.once[nid].join(", "))}</div>`:""}
           ${l.tech?.[nid]?.length?`<div style="color:var(--brass)">🔬 изучено: ${esc(l.tech[nid].join(", "))}</div>`:""}</div></div>`).join("")
         :'<div class="hint">«Прошёл год» ещё не применялся.</div>'}</div>`;
+    }
+    if(cabTab==="acc"&&gm){
+      inner=`<div class="hint" style="margin-top:0">Вход игрока на сайт: логин и код. Игроки этой вкладки не видят — у них в кабинете только своё государство. После правки нажми «Опубликовать» на вкладке «Сайт», иначе новый код не заработает.</div>
+        <table class="pool"><tr><th>Государство</th><th style="text-align:left">Логин</th><th style="text-align:left">Код</th><th style="text-align:left">Игрок</th><th>Статус</th></tr>${cabAccess()}</table>
+        <div class="hint">Код шифрует персональную сборку игрока: без него файл со стороны не прочитать. Смена кода действует с ближайшей публикации.</div>`;
+    }
+    if(cabTab==="sync"&&gm) inner=syncTabHtml();
+    body.innerHTML=`
+      <div class="list-row" style="margin-bottom:4px">
+        ${gm?`<select id="ec_nat" style="flex:1" title="Государство">${list.map(n=>`<option value="${n.id}" ${n.id===nid?'selected':''}>${esc(n.name)}</option>`).join("")}</select>`
+            :`<b style="flex:1;font-family:var(--serif);font-size:15px;color:${nation(nid)?.color||"var(--ink)"}">${esc(nation(nid)?.name||"")}</b>`}
+        <span class="pill" style="font-size:11px;padding:3px 8px;flex:0 0 auto" title="Счётчик лет партии">год ${data.econ.year}</span>
+      </div>
+      <div class="statgrid" style="grid-template-columns:repeat(3,1fr)">
+        <div><b>${fmtN(money.stock)}</b><span>казна, ></span></div>
+        <div><b class="${money.net>0?"ok":money.net<0?"bad":""}">${pmN(money.net)}</b><span>бюджет за год</span></div>
+        <div><b>${esc(cap?.name||"—")}</b><span>столица</span></div>
+      </div>
+      <div class="tabs">${TABS.map(([k,n])=>`<button data-tab="${k}" class="${cabTab===k?"on":""}">${n}</button>`).join("")}</div>
+      <div id="cb_body">${inner}</div>`;
     body.scrollTop=sc;
-    if(q("#ec_nat"))q("#ec_nat").onchange=ev=>{nid=econNation=ev.target.value;draw();};
-    if(q("#ec_cap"))q("#ec_cap").onchange=ev=>{snapshot(true);markDirty();econNat(nid,true).cap=ev.target.value||null;render();if(selProv())reIns();draw();};
-    if(q("#ec_go"))q("#ec_go").onclick=()=>{const p=econCap(nid);if(!p)return;closeModal();select("province",p.id);focusSelection();};
+    body.querySelectorAll("[data-tab]").forEach(b=>b.onclick=()=>{
+      if(cabTab==="acc")cabWriteAccess(body);
+      cabTab=b.dataset.tab; body.scrollTop=0; draw();
+    });
+    if(q("#ec_nat"))q("#ec_nat").onchange=ev=>{if(cabTab==="acc")cabWriteAccess(body);nid=econNation=ev.target.value;draw();};
     if(q("#ec_year"))q("#ec_year").onclick=()=>confirmYear(draw);
     if(q("#ec_rec"))q("#ec_rec").onclick=()=>openRecipes(draw);
     if(q("#ec_all"))q("#ec_all").onclick=()=>{econShowAll=!econShowAll;draw();};
-    if(q("#ec_addadd"))q("#ec_addadd").onclick=()=>{snapshot(true);markDirty();econNat(nid,true).adds.push({id:uid(),res:"coal",amt:0,note:""});draw();};
+    if(q("#ec_cap2"))q("#ec_cap2").onclick=()=>capPicker(nid,draw);
+    if(q("#ec_addadd"))q("#ec_addadd").onclick=()=>{snapshot(true);markDirty();econNat(nid,true).adds.push({id:uid(),res:"coal",amt:0,note:"",once:false});draw();};
+    if(q("#ec_tech"))q("#ec_tech").onclick=()=>{closeModal();openResearch(nid);};
+    if(q("#ec_country"))q("#ec_country").onclick=()=>{closeModal();panelNation=nid;openCountryPanel();};
     body.querySelectorAll("[data-ad]").forEach(b=>b.onclick=()=>{snapshot(true);markDirty();const e2=econNat(nid,true);e2.adds=e2.adds.filter(a=>a.id!==b.dataset.ad);draw();afterEcon();});
     body.querySelectorAll("[data-pv]").forEach(tr=>tr.onclick=()=>{closeModal();select("province",tr.dataset.pv);focusSelection();});
+    if(cabTab==="sync")syncTabBind(body,draw);
   };
   /* поля пишутся в данные на лету, вычисляемые ячейки пересчитываются без перерисовки окна */
   const onField=ev=>{
     if(!gm)return;
     const t=ev.target, d=t.dataset, e=econNat(nid,true);
     let pool=false;
+    if(d.plog!==undefined||d.pcode!==undefined||d.pname!==undefined){ cabWriteAccess(body); return; }
     if(d.est!==undefined) stockSet(nid,d.est,t.value.trim());
     else if(d.emod!==undefined){const v=t.value.trim(); if(v)e.mods[d.emod]=+v.replace(",",".")||0; else delete e.mods[d.emod];}
     else if(d.eneed!==undefined){const v=t.value.trim(); if(v)e.need[d.eneed]=v; else delete e.need[d.eneed];}
-    else if(d.ar||d.aa||d.an){
-      const a=e.adds.find(x=>x.id===(d.ar||d.aa||d.an)); if(!a)return;
-      if(d.ar)a.res=t.value; if(d.aa)a.amt=+t.value||0; if(d.an)a.note=t.value;
+    else if(d.ar||d.aa||d.an||d.a1){
+      const a=e.adds.find(x=>x.id===(d.ar||d.aa||d.an||d.a1)); if(!a)return;
+      if(d.ar)a.res=t.value; if(d.aa)a.amt=+t.value||0; if(d.an)a.note=t.value; if(d.a1)a.once=t.checked;
       pool=true;
     } else return;
     if(ev.type==="input"){snapshot();markDirty();}
-    if(pool&&ev.type==="change") q("#ec_pool").innerHTML=poolTable(nid,{full:true,edit:gm,all:gm&&econShowAll});
-    else refreshPool(q("#ec_pool"),nid);
-    q("#ec_form").innerHTML=formationHtml(nid);
+    const box=q("#ec_pool");
+    if(box){
+      if(pool&&ev.type==="change") box.innerHTML=poolTable(nid,{edit:gm,all:gm&&econShowAll});
+      else refreshPool(box,nid);
+    }
+    if(q("#ec_form"))q("#ec_form").innerHTML=formationHtml(nid);
     afterEcon();
   };
   body.addEventListener("input",onField); body.addEventListener("change",onField);
   draw();
 }
-$("#btnEcon").addEventListener("click",()=>openEconPanel(role?.gm?null:myNation()));
+/* выбор столицы государства */
+function capPicker(nid,after){
+  const e=econNat(nid,true), provs=data.provinces.filter(p=>p.nationId===nid);
+  const m=openModal("Столица государства",`
+    <div class="hint" style="margin-top:0">Столицей считается провинция со столичным городом, а если его нет — самая крупная. Здесь можно назначить её вручную: на карте она помечена значком ◈.</div>
+    <select id="cp_capsel"><option value="">авто</option>${provs.map(p=>`<option value="${p.id}" ${e.cap===p.id?"selected":""}>${esc(p.name)}</option>`).join("")}</select>`,
+    [["Готово","primary",()=>{
+      snapshot(true);markDirty();
+      econNat(nid,true).cap=$("#cp_capsel").value||null;
+      closeModal();render();reInsIfProv();if(after)after();
+    }],["Отмена","",closeModal]]);
+}
+const openEconPanel=openCabinet;
+$("#btnEcon").addEventListener("click",()=>openCabinet(role?.gm?null:myNation()));
 $("#btnTech").addEventListener("click",()=>openResearch(role?.gm?null:myNation()));
 
 /* =============================================================
@@ -4346,31 +4468,46 @@ function confirmYear(after){
   if(!role?.gm)return;
   if(!data.nations.length){toast("Сначала заведи государства");return;}
   const rows=data.nations.map(n=>{
-    const R=econCalc(n.id); let up=0,down=0; const lack=[];
-    for(const [k,r] of Object.entries(R)){ if(r.net>0)up++; else if(r.net<0){down++; if(r.stock+r.net<0)lack.push(resName(k));} }
-    return `<tr><td>${esc(n.name)}</td><td class="plus">${up||"—"}</td><td class="minus">${down||"—"}</td>
+    const R=econCalc(n.id); const lack=[], dry=[];
+    let money=R.money?.net||0;
+    for(const [k,r] of Object.entries(R)){
+      if(!r.net)continue;
+      if(!accumRes(k)){ if(r.net<0)dry.push(resName(k)); }
+      else if(r.stock+r.net<0)lack.push(resName(k));
+    }
+    return `<tr><td>${esc(n.name)}</td><td class="${sgnC(money)}">${pmN(money)}</td>
+      <td style="text-align:left;white-space:normal" class="${dry.length?"minus":"dim"}">${esc(dry.join(", "))||"—"}</td>
       <td style="text-align:left;white-space:normal" class="${lack.length?"minus":"dim"}">${esc(lack.join(", "))||"—"}</td></tr>`;
   }).join("");
   openModal(`Прошёл год ${data.econ.year}`,`
-    <div class="hint" style="margin-top:0;margin-bottom:6px">Годовой итог каждого ресурса прибавится к запасам всех государств. Если запаса не хватает, он обнуляется, а нехватка пишется в журнал. Отменить можно через Ctrl+Z.</div>
-    <table class="pool"><tr><th>Государство</th><th>Растёт</th><th>Убывает</th><th style="text-align:left">Не хватит</th></tr>${rows}</table>`,
+    <div class="hint" style="margin-top:0;margin-bottom:6px">Что произойдёт: бюджету и военным складам каждого государства прибавится годовой итог (доходы минус расходы), промышленность пересчитается заново — она не копится. Снабжение останется как записано. Разовые прибавки сработают и исчезнут. Указы НИЦ продвинутся на год.${syncOn()?" После пересчёта данные сами уедут на сайт — игроки увидят новый год.":""}<br>Отменить можно через Ctrl+Z.</div>
+    <table class="pool"><tr><th>Государство</th><th>Бюджет за год</th><th style="text-align:left">Промышленность в минусе</th><th style="text-align:left">Складов не хватит</th></tr>${rows}</table>`,
     [["Применить","primary",()=>{closeModal();passYear();if(after)after();}],["Отмена","",closeModal]]);
 }
 function passYear(){
   if(!role?.gm)return;
   snapshot(true); markDirty();
-  const y=data.econ.year, entry={year:y,at:new Date().toISOString().slice(0,10),nat:{},tech:{}};
+  const y=data.econ.year, entry={year:y,at:new Date().toISOString().slice(0,10),nat:{},tech:{},dry:{},once:{}};
   let short=0, techDoneN=0;
   for(const n of data.nations){
     const R=econCalc(n.id), lines=[];
+    const dry=[];
     for(const [k,r] of Object.entries(R)){
       if(!r.net)continue;
+      if(!accumRes(k)){ if(r.net<0)dry.push([k,r.net]); continue; }   /* промышленность не копится */
       const was=r.stock; let nv=rnd(was+r.net), lack=0;
       if(nv<0){lack=-nv;nv=0;short++;}
       stockSet(n.id,k,nv);
       lines.push([k,was,r.net,nv,lack]);
     }
     if(lines.length)entry.nat[n.id]=lines;
+    if(dry.length)entry.dry[n.id]=dry;
+    /* разовые прибавки и убыли срабатывают один раз и уходят */
+    const ee=econNat(n.id,true), once=(ee.adds||[]).filter(a=>a.once&&+a.amt);
+    if(once.length){
+      ee.adds=ee.adds.filter(a=>!a.once);
+      entry.once[n.id]=once.map(a=>`${resName(a.res)} ${pmN(a.amt)}${a.note?" — "+a.note:""}`);
+    }
     /* исследования: каждый НИЦ двигает один указ */
     const rr=resNat(n.id,true), got=[];
     for(const pr of rr.projects.slice(0,nicCount(n.id))){
@@ -4382,7 +4519,8 @@ function passYear(){
   data.econ.log.unshift(entry); if(data.econ.log.length>30)data.econ.log.length=30;
   data.econ.year=y+1;
   render(); if(selection)reIns();
-  toast(`Прошёл год ${y}. Запасы пересчитаны${short?` · нехватка по ${short} позициям`:""}${techDoneN?` · изучено технологий: ${techDoneN}`:""}`);
+  toast(`Прошёл год ${y}. Бюджет и склады пересчитаны${short?` · нехватка по ${short} позициям`:""}${techDoneN?` · изучено технологий: ${techDoneN}`:""}`);
+  if(syncOn()&&role.gm) publishAll({quiet:true,reason:`год ${y+1}`});
 }
 
 /* ---- механика заводов: входы и выходы каждого типа ---- */
@@ -4463,6 +4601,7 @@ function previewExit(){
   selection=null;closeInspector();bumpBorders();bumpWar();render();applyRole2();
 }
 function applyRole2(){ $("#roleBadge").textContent=role.gm?"ГМ · полный допуск":`Игрок: ${player(role.playerId)?.name||"?"}`; }
+window.openCabinet=openCabinet;
 $("#previewExit").addEventListener("click",previewExit);
 
 /* --- 2. Поиск по карте --- */
@@ -4673,9 +4812,10 @@ $("#btnTools").addEventListener("click",()=>{
     <h3 class="sec">Экономика</h3>
     <div class="hint" style="margin-top:0">Год партии: <b style="color:var(--brass)">${data.econ.year}</b>. «Прошёл год» применяет годовой итог каждого ресурса к запасам всех государств.</div>
     <div class="btnrow"><button id="gt_year" class="primary" title="Применить доходы и расходы за год ко всем государствам">⏭ Прошёл год</button>
-      <button id="gt_econ" title="Пул ресурсов, модификаторы, прибавки, снабжение">💰 Экономика</button>
+      <button id="gt_econ" title="Бюджет, ресурсы, силы, доступы игроков, публикация на сайт">🏛 Кабинет государства</button>
       <button id="gt_rec" title="Что потребляют и выпускают заводы каждого типа">⚙ Механика заводов</button>
-      <button id="gt_tech" title="Дерево технологий, военные возможности и указы НИЦ">🔬 Исследования</button></div>
+      <button id="gt_tech" title="Дерево технологий, военные возможности и указы НИЦ">🔬 Исследования</button>
+      <button id="gt_pub" title="Выложить текущее состояние партии на сайт — игроки увидят обновление">📤 Опубликовать на сайт</button></div>
     <h3 class="sec">Просмотр глазами игрока</h3>
     <div class="hint" style="margin-top:0">Карта покажет ровно то, что видит выбранный игрок: чужие войска, скрытые месторождения и закрытые театры исчезнут. Выход - кнопка в красной полосе сверху.</div>
     ${data.players.length?`<label>Игрок</label><select id="gt_p">${data.players.map(p2=>`<option value="${p2.id}">${esc(p2.name)}</option>`).join("")}</select>
@@ -4688,7 +4828,8 @@ $("#btnTools").addEventListener("click",()=>{
   `,[["Закрыть","primary",closeModal]]);
   m.querySelector("#gt_search").onclick=()=>{closeModal();openSearch();};
   m.querySelector("#gt_year").onclick=()=>{closeModal();confirmYear();};
-  m.querySelector("#gt_econ").onclick=()=>{closeModal();openEconPanel();};
+  m.querySelector("#gt_econ").onclick=()=>{closeModal();openCabinet();};
+  m.querySelector("#gt_pub").onclick=()=>{closeModal();syncOn()?publishAll({reason:"правки ГМа"}):openCabinet(null,"sync");};
   m.querySelector("#gt_rec").onclick=()=>{closeModal();openRecipes();};
   m.querySelector("#gt_tech").onclick=()=>{closeModal();openResearch();};
   m.querySelector("#gt_dice").onclick=()=>{closeModal();openDice();};
@@ -4712,7 +4853,19 @@ $("#btnReset").addEventListener("click",()=>{
 });
 $("#btnHelp").addEventListener("click",()=>{
   openModal("Помощь · v"+APP_VER,`
-    <h3 class="sec" style="margin-top:0">Что нового в v3.3</h3>
+    <h3 class="sec" style="margin-top:0">Что нового в v4.0</h3>
+    <div class="hint">
+      · Вход на сайте по логину и коду. Игрок открывает адрес партии, вводит выданные ГМом логин и код — и сразу видит карту глазами своего государства. Ни файл партии, ни файл карты прикладывать не нужно.<br>
+      · Хранилище — тот же репозиторий, что и сайт, отдельная ветка. Каждому игроку кладётся своя сборка, зашифрованная его кодом: чужую сборку со стороны не прочитать, даже имея ссылку. Пишет только ГМ своим токеном GitHub, который хранится в его браузере и в партию не попадает.<br>
+      · Кабинет → Сайт: настройка репозитория и токена, проверка доступа, кнопка «Опубликовать». «Прошёл год» публикует изменения сам. Игроки раз в пару минут проверяют обновления и получают предложение перезагрузить партию.<br>
+      · Карты выкладываются на сайт один раз и дальше живут в кэше браузера вместе с последней сборкой: повторный вход работает мгновенно и даже без сети.<br>
+      · Кабинет государства (🏛 в верхней панели) вместо пула в столичной провинции: бюджет и ресурсы, вооружённые силы, провинции, журнал лет, а у ГМа ещё доступы игроков и публикация. ГМ переключается между всеми державами, игрок видит только свою.<br>
+      · Промышленные ресурсы больше не копятся — у них есть только баланс года: добыча и заводы против потребления и снабжения. Казна и военные склады (винтовки, орудия, доп. оснащение, танки, машины, самолёты, корабли, взрывчатка) копятся из года в год.<br>
+      · «Прошёл год» пересчитывает всем государствам бюджет (доходы минус расходы) и военные склады, двигает указы НИЦ, а снабжение оставляет как записано.<br>
+      · Сторонние источники прихода и расхода по любому ресурсу: торговля, дань, найденное месторождение, потери от блокады. Бывают постоянные и разовые — разовая срабатывает на ближайшей смене года и исчезает.<br>
+      · Доступы: ГМ задаёт логин и код для каждого государства в кабинете. Игроки этой вкладки не видят.<br>
+    </div>
+    <h3 class="sec">v3.3</h3>
     <div class="hint">
       · Исследования (🔬 Наука в верхней панели). Дерево повторяет конструктор «Дерево технологий»: те же разделы, тиры и условия, включая правило двух технологий предыдущего тира. ГМ отмечает изученное вручную или переносит готовое дерево кнопкой «Загрузить дерево из файла» — берётся json, выгруженный конструктором; неизвестные id пропускаются.<br>
       · Военные возможности пяти семейств: стрелковое, артиллерия, танки, самолёты, корабли. Тир открывает весь класс разом и даёт множитель атаки и защиты: Т0 ×1.0, Т1 ×1.2, Т2 ×1.45, Т3 ×1.75, Т4 ×2.1. Множитель входит в расчёт линии фронта: соединение давит на местность сильнее.<br>
@@ -4815,10 +4968,11 @@ $("#btnHelp").addEventListener("click",()=>{
       1. Настройки → подключи основную карту (JPEG/WebP в 10–30 МБ летает быстрее, чем PNG 200 МБ).<br>
       2. Заведи государства и игроков с кодами.<br>
       3. ⬠ провинции · ◉ города · ▣ дивизии · ✈ постройки. Всё редактируется в панели справа. В карточке провинции — добывающие точки и предприятия.<br>
-      3а. 💰 Экономика: запасы, снабжение, модификаторы и прибавки государств; ⏭ «Прошёл год» в конце игрового года.<br>
+      3а. 🏛 Кабинет: бюджет и ресурсы государств, снабжение, сторонние источники, вооружённые силы; ⏭ «Прошёл год» в конце игрового года.<br>
       3б. 🔬 Наука: дерево технологий государства, военные возможности, указы НИЦ. Готовое дерево переносится файлом из конструктора.<br>
       4. «Сохранить» — мастер-файл. «Сборка игроку» — персональный файл со срезанным скрытым.<br>
-      5. Игроку отправь: ссылку https://aelxspec.github.io (или сам этот HTML) + его сборку + файлы карт.
+      5. Кабинет → Доступ игроков: логин и код каждому государству. Кабинет → Сайт: репозиторий, токен, «Опубликовать с картами».<br>
+      6. Игроку достаточно ссылки на сайт, логина и кода — файлы больше не нужны. Если сайт не настроен, работает прежний путь: «Сборка игроку» + файлы карт.
     </div>
     <h3 class="sec">Горячие клавиши</h3>
     <div class="hint">V выбор · P провинция · C город · D дивизия · A постройка · M месторождение · R железная дорога · O дорога · Z штриховая область · G стрелка · T театр · B рамка · L линейка<br>
@@ -4972,6 +5126,326 @@ mini.addEventListener("pointerup",e=>{ if(mini._down&&!miniDrag)miniGo(e,true); 
 mini.addEventListener("wheel",e=>{e.stopPropagation();e.preventDefault();zoomBy(e.deltaY<0?1.4:1/1.4);},{passive:false});
 
 /* =============================================================
+   САЙТ: ПУБЛИКАЦИЯ И ВХОД ПО ЛОГИНУ
+   Данные партии лежат в том же репозитории, что и сайт, в отдельной
+   ветке. Каждому игроку — своя сборка, зашифрованная его кодом
+   (AES-GCM, ключ из кода через PBKDF2), поэтому в публичном
+   репозитории чужую сборку не прочитать. Пишет только ГМ своим
+   токеном, который хранится в его браузере и в партию не попадает.
+   ============================================================= */
+const SYNC_KEY="vpi.sync.v1";
+function syncCfg(){
+  let c={}; try{ c=JSON.parse(localStorage.getItem(SYNC_KEY)||"{}"); }catch(e){}
+  const h=location.hostname, seg=location.pathname.split("/").filter(s=>s&&!/\.html?$/i.test(s));
+  const pages=/\.github\.io$/i.test(h);
+  return {owner:c.owner||(pages?h.replace(/\.github\.io$/i,""):""),
+    repo:c.repo||(pages?(seg.length?seg[0]:h):""),
+    branch:c.branch||"data", token:c.token||"", poll:+c.poll||120};
+}
+function syncSave(p){ try{ localStorage.setItem(SYNC_KEY,JSON.stringify({...syncCfg(),...p})); }catch(e){} }
+const syncReadable=()=>{ const c=syncCfg(); return !!(c.owner&&c.repo); };
+const syncOn=()=>{ const c=syncCfg(); return !!(c.owner&&c.repo&&c.token); };
+const rawUrl=path=>{ const c=syncCfg(); return `https://raw.githubusercontent.com/${c.owner}/${c.repo}/${c.branch}/${path}`; };
+
+/* ---- мелочи: base64, хеш, шифрование ---- */
+function b64enc(u8){ let s="",CH=0x8000; for(let i=0;i<u8.length;i+=CH)s+=String.fromCharCode.apply(null,u8.subarray(i,i+CH)); return btoa(s); }
+function b64dec(s){ const b=atob(s),u=new Uint8Array(b.length); for(let i=0;i<b.length;i++)u[i]=b.charCodeAt(i); return u; }
+const txt2b64=s=>b64enc(new TextEncoder().encode(s));
+async function sha256hex(s){
+  const h=await crypto.subtle.digest("SHA-256",new TextEncoder().encode(s));
+  return [...new Uint8Array(h)].map(b=>b.toString(16).padStart(2,"0")).join("");
+}
+const loginPath=async login=>"data/u_"+(await sha256hex("vpi:"+String(login||"").trim().toLowerCase())).slice(0,20)+".json";
+async function cryptoKeyOf(pass,salt){
+  const km=await crypto.subtle.importKey("raw",new TextEncoder().encode(pass),"PBKDF2",false,["deriveKey"]);
+  return crypto.subtle.deriveKey({name:"PBKDF2",salt,iterations:150000,hash:"SHA-256"},km,{name:"AES-GCM",length:256},false,["encrypt","decrypt"]);
+}
+async function encJSON(obj,pass){
+  const salt=crypto.getRandomValues(new Uint8Array(16)), iv=crypto.getRandomValues(new Uint8Array(12));
+  const key=await cryptoKeyOf(pass,salt);
+  const ct=await crypto.subtle.encrypt({name:"AES-GCM",iv},key,new TextEncoder().encode(JSON.stringify(obj)));
+  return {v:1,alg:"AES-GCM",kdf:"PBKDF2-SHA256",it:150000,salt:b64enc(salt),iv:b64enc(iv),ct:b64enc(new Uint8Array(ct))};
+}
+async function decJSON(box,pass){
+  const key=await cryptoKeyOf(pass,b64dec(box.salt));
+  const pt=await crypto.subtle.decrypt({name:"AES-GCM",iv:b64dec(box.iv)},key,b64dec(box.ct));
+  return JSON.parse(new TextDecoder().decode(pt));
+}
+
+/* ---- кэш в браузере: сборка и карты остаются на устройстве ---- */
+function idb(){
+  return new Promise((res,rej)=>{
+    const r=indexedDB.open("vpi-map",1);
+    r.onupgradeneeded=()=>{ if(!r.result.objectStoreNames.contains("kv"))r.result.createObjectStore("kv"); };
+    r.onsuccess=()=>res(r.result); r.onerror=()=>rej(r.error);
+  });
+}
+async function idbSet(k,v){
+  try{ const db=await idb(); await new Promise((res,rej)=>{ const t=db.transaction("kv","readwrite"); t.objectStore("kv").put(v,k); t.oncomplete=res; t.onerror=()=>rej(t.error); }); }catch(e){}
+}
+async function idbGet(k){
+  try{ const db=await idb(); return await new Promise((res,rej)=>{ const t=db.transaction("kv","readonly"); const q=t.objectStore("kv").get(k); q.onsuccess=()=>res(q.result); q.onerror=()=>rej(q.error); }); }catch(e){ return undefined; }
+}
+async function idbDel(k){
+  try{ const db=await idb(); await new Promise(res=>{ const t=db.transaction("kv","readwrite"); t.objectStore("kv").delete(k); t.oncomplete=res; t.onerror=res; }); }catch(e){}
+}
+
+/* ---- чтение с сайта ---- */
+async function fetchSite(path,asBlob){
+  if(!syncReadable())throw new Error("сайт не настроен");
+  const r=await fetch(rawUrl(path)+"?t="+Date.now(),{cache:"no-store"});
+  if(!r.ok)throw new Error("нет файла "+path+" ("+r.status+")");
+  return asBlob?r.blob():r.json();
+}
+
+/* ---- запись: один коммит на всю публикацию ---- */
+async function gh(path,opt={}){
+  const c=syncCfg();
+  const r=await fetch(`https://api.github.com/repos/${c.owner}/${c.repo}${path}`,{...opt,
+    headers:{Accept:"application/vnd.github+json",Authorization:"Bearer "+c.token,"Content-Type":"application/json",...(opt.headers||{})}});
+  if(!r.ok){
+    const t=(await r.text()).slice(0,300);
+    throw new Error(r.status===401||r.status===403?"токен не подошёл или не хватает прав (нужно Contents: read and write)":`GitHub ${r.status}: ${t}`);
+  }
+  return r.status===204?null:r.json();
+}
+async function ghCommit(files,message){
+  const c=syncCfg();
+  let ref=null;
+  try{ ref=await gh(`/git/ref/heads/${c.branch}`); }catch(e){}
+  if(!ref){
+    const info=await gh("");
+    const base=await gh(`/git/ref/heads/${info.default_branch}`);
+    ref=await gh("/git/refs",{method:"POST",body:JSON.stringify({ref:`refs/heads/${c.branch}`,sha:base.object.sha})});
+  }
+  const headSha=ref.object.sha, head=await gh(`/git/commits/${headSha}`);
+  const tree=[];
+  for(const f of files){
+    const b=await gh("/git/blobs",{method:"POST",body:JSON.stringify({content:f.content,encoding:"base64"})});
+    tree.push({path:f.path,mode:"100644",type:"blob",sha:b.sha});
+  }
+  const t=await gh("/git/trees",{method:"POST",body:JSON.stringify({base_tree:head.tree.sha,tree})});
+  const commit=await gh("/git/commits",{method:"POST",body:JSON.stringify({message,tree:t.sha,parents:[headSha]})});
+  await gh(`/git/refs/heads/${c.branch}`,{method:"PATCH",body:JSON.stringify({sha:commit.sha})});
+  return commit.sha;
+}
+
+/* ---- карты выкладываются один раз и потом живут в кэше у всех ---- */
+async function mapPayload(force){
+  const out={files:[],manifest:{}};
+  const pub=data.meta.mapsPub||(data.meta.mapsPub={});
+  const grab=async (key,el,name)=>{
+    if(!el||!el.src||!el.naturalWidth)return;
+    const safe=(name||"map").replace(/[^\wа-яА-ЯёЁ.\-]+/g,"_");
+    const path=`maps/${key}_${safe}`;
+    out.manifest[key]={path,name:name||""};
+    if(!force&&pub[key]&&pub[key].path===path)return;        /* уже выложена — не гоняем мегабайты заново */
+    const blob=await (await fetch(el.src)).blob();
+    const buf=new Uint8Array(await blob.arrayBuffer());
+    if(buf.length>45*1024*1024){ toast(`Карта «${name}» больше 45 МБ — положи её в репозиторий вручную`); return; }
+    out.files.push({path,content:b64enc(buf)});
+    pub[key]={path,size:buf.length};
+  };
+  await grab("main",img,data.meta.mapHint||"map");
+  for(const [mode] of MODES){
+    if(!underlays[mode])continue;
+    const el=document.querySelector(`#world img.under[data-mode="${mode}"]`);
+    await grab("under_"+mode,el,data.meta.underlayHints?.[mode]||mode);
+  }
+  return out;
+}
+
+let publishing=false;
+async function publishAll(opt={}){
+  if(!role?.gm)return;
+  if(publishing){toast("Публикация уже идёт");return;}
+  if(!syncOn()){toast("Сначала настрой публикацию: Кабинет → Сайт");return;}
+  const accounts=data.players.filter(p=>p.login&&p.code);
+  if(!accounts.length&&!data.meta.gmCode){
+    toast("Не задано ни одного входа: Кабинет → Доступ игроков, и код ГМа в Настройках");return;
+  }
+  publishing=true;
+  const t0=Date.now();
+  if(!opt.quiet)toast("Публикую…");
+  try{
+    const maps=await mapPayload(opt.maps);
+    data.meta.rev=(+data.meta.rev||0)+1;
+    data.meta.pubAt=new Date().toISOString();
+    const files=[...maps.files];
+    for(const p of accounts){
+      const box=await encJSON(filterForPlayer(p.id),p.code);
+      files.push({path:await loginPath(p.login),content:txt2b64(JSON.stringify(box))});
+    }
+    const gmLogin=(data.meta.gmLogin||"gm").trim();
+    if(data.meta.gmCode){
+      const box=await encJSON(data,data.meta.gmCode);
+      files.push({path:await loginPath(gmLogin),content:txt2b64(JSON.stringify(box))});
+    }
+    const man={app:"vpi-map",v:1,party:data.meta.name||"ВПИ",year:data.econ.year,rev:data.meta.rev,
+      updated:data.meta.pubAt,accounts:accounts.length,gm:!!data.meta.gmCode,maps:maps.manifest};
+    files.push({path:"manifest.json",content:txt2b64(JSON.stringify(man,null,1))});
+    await ghCommit(files,`ВПИ · ${opt.reason||"обновление"} · год ${data.econ.year} · ревизия ${data.meta.rev}`);
+    markDirty();
+    lastSeenRev=data.meta.rev;
+    toast(`Опубликовано: сборок ${accounts.length}${maps.files.length?`, карт ${maps.files.length}`:""} · ${Math.round((Date.now()-t0)/1000)} с`);
+  }catch(e){
+    data.meta.rev=Math.max(0,(+data.meta.rev||1)-1);
+    toast("Публикация не удалась: "+e.message);
+  }
+  publishing=false;
+}
+
+/* ---- вход по логину и подхват карт ---- */
+let authNow=null, lastSeenRev=0, pollT=0;
+function setMapBlob(blob){
+  return new Promise(res=>{
+    const url=URL.createObjectURL(blob);
+    img.onload=()=>{
+      for(const el of [svg,svg2]){
+        el.setAttribute("width",img.naturalWidth); el.setAttribute("height",img.naturalHeight);
+        el.setAttribute("viewBox",`0 0 ${img.naturalWidth} ${img.naturalHeight}`);
+      }
+      document.querySelectorAll("#world img.under").forEach(el=>{el.width=img.naturalWidth;el.height=img.naturalHeight;});
+      mapLoaded=true; $("#nomap").style.display="none";
+      zoomFit(); updateBackgrounds(); showMini(); res(true);
+    };
+    img.onerror=()=>res(false);
+    img.src=url;
+  });
+}
+async function siteFile(path){
+  const key="file:"+path;
+  let blob=await idbGet(key);
+  if(!blob){
+    try{ blob=await fetchSite(path,true); await idbSet(key,blob); }catch(e){ return null; }
+  }
+  return blob;
+}
+async function loadMapsFromSite(man){
+  if(!man?.maps?.main)return false;
+  const b=await siteFile(man.maps.main.path);
+  if(!b)return false;
+  await setMapBlob(b);
+  for(const [mode] of MODES){
+    const spec=man.maps["under_"+mode]; if(!spec)continue;
+    const ub=await siteFile(spec.path);
+    if(ub)attachUnderlay(mode,ub,spec.name);
+  }
+  return true;
+}
+/* логин + код → своя сборка; если сайт недоступен, берём последнюю из кэша */
+async function onlineLogin(login,code){
+  const path=await loginPath(login);
+  let box=null, offline=false;
+  try{ box=await fetchSite(path); }
+  catch(e){
+    box=await idbGet("bundle:"+path);
+    if(!box)throw new Error("Логин не найден на сайте. Проверь логин или подключение");
+    offline=true;
+  }
+  let d;
+  try{ d=await decJSON(box,code); }catch(e){ throw new Error("Код не подходит"); }
+  await idbSet("bundle:"+path,box);
+  data=migrate(d);
+  role=data.meta.lockedRole?{gm:false,playerId:data.meta.lockedRole}:{gm:true};
+  authNow={login:String(login).trim(),code,path};
+  lastSeenRev=+data.meta.rev||0;
+  try{ localStorage.setItem("vpi.lastLogin",authNow.login); }catch(e){}
+  startApp();
+  let man=null;
+  try{ man=await fetchSite("manifest.json"); }catch(e){ man=await idbGet("manifest"); }
+  if(man)await idbSet("manifest",man);
+  const ok=man?await loadMapsFromSite(man):false;
+  if(!ok)toast("Карта не выложена на сайт — подключи файл карты вручную");
+  if(offline)toast("Сайт недоступен: работаем по сохранённой на устройстве копии");
+  startPolling();
+  return true;
+}
+/* проверка обновлений: у игрока — предложение перезагрузиться, у ГМа — предупреждение */
+async function checkUpdates(manual){
+  if(!data||!syncReadable())return;
+  let man=null;
+  try{ man=await fetchSite("manifest.json"); }catch(e){ if(manual)toast("Сайт не отвечает"); return; }
+  const rev=+man.rev||0;
+  if(rev<=(+data.meta.rev||0)){ if(manual)toast("У вас самая свежая версия"); return; }
+  if(role?.gm&&syncOn()){ toast(`На сайте ревизия ${rev}, у вас ${data.meta.rev||0}: кто-то публиковал с другого устройства`); return; }
+  if(!authNow){ if(manual)toast(`На сайте новая версия (год ${man.year})`); return; }
+  if(rev===lastSeenRev&&!manual)return;
+  lastSeenRev=rev;
+  openModal("Данные обновились",`
+    <div class="hint" style="margin-top:0">ГМ выложил новую версию партии: год ${man.year}, ревизия ${rev}.
+      Обновить сейчас? Несохранённые ваши правки на карте при этом пропадут.</div>`,
+    [["Обновить","primary",async()=>{ closeModal(); await reloadFromSite(); }],["Позже","",closeModal]]);
+}
+async function reloadFromSite(){
+  if(!authNow)return;
+  const keepView={...view}, keepTool=tool;
+  try{
+    const box=await fetchSite(authNow.path);
+    const d=await decJSON(box,authNow.code);
+    await idbSet("bundle:"+authNow.path,box);
+    data=migrate(d); selection=null; closeInspector();
+    bumpBorders(); bumpWar(); _pbox.clear();
+    undoStack.length=0; redoStack.length=0; markClean();
+    lastSeenRev=+data.meta.rev||0;
+    view=keepView; setTool(keepTool); applyView(); render();
+    let man=null; try{ man=await fetchSite("manifest.json"); }catch(e){}
+    if(man){ await idbSet("manifest",man); if(!mapLoaded)await loadMapsFromSite(man); }
+    toast(`Обновлено: год ${data.econ.year}`);
+  }catch(e){ toast("Не удалось обновить: "+e.message); }
+}
+function startPolling(){
+  clearInterval(pollT);
+  if(!syncReadable())return;
+  $("#btnSync").style.display="";
+  const sec=Math.max(30,+syncCfg().poll||120);
+  pollT=setInterval(()=>checkUpdates(false),sec*1000);
+}
+$("#btnSync").addEventListener("click",()=>{
+  if(role?.gm&&syncOn())publishAll({reason:"правки ГМа"});
+  else checkUpdates(true);
+});
+
+/* ---- вкладка «Сайт» в кабинете ---- */
+function syncTabHtml(){
+  const c=syncCfg(), acc=data.players.filter(p=>p.login&&p.code).length;
+  const mapsPub=Object.keys(data.meta.mapsPub||{}).length;
+  return `<div class="hint" style="margin-top:0">Партия хранится в том же репозитории, что и сайт, в ветке <b>${esc(c.branch)}</b>. Каждому игроку кладётся своя сборка, зашифрованная его кодом, — чужую со стороны не прочитать. Пишет только этот браузер: токен хранится здесь и в партию не попадает.</div>
+    <div class="list-row"><span style="flex:0 0 90px;color:var(--ink-dim);font-size:11px">ВЛАДЕЛЕЦ</span><input id="sy_owner" value="${esc(c.owner)}" placeholder="AelxSpec"></div>
+    <div class="list-row"><span style="flex:0 0 90px;color:var(--ink-dim);font-size:11px">РЕПОЗИТОРИЙ</span><input id="sy_repo" value="${esc(c.repo)}" placeholder="aelxspec.github.io"></div>
+    <div class="list-row"><span style="flex:0 0 90px;color:var(--ink-dim);font-size:11px">ВЕТКА ДАННЫХ</span><input id="sy_branch" value="${esc(c.branch)}" placeholder="data"></div>
+    <div class="list-row"><span style="flex:0 0 90px;color:var(--ink-dim);font-size:11px">ТОКЕН</span><input id="sy_token" type="password" value="${esc(c.token)}" placeholder="github_pat_…"></div>
+    <div class="list-row"><span style="flex:0 0 90px;color:var(--ink-dim);font-size:11px">ОПРОС, СЕК</span><input id="sy_poll" type="number" min="30" step="30" value="${c.poll}" style="flex:0 0 90px" title="Как часто игроки проверяют, не вышла ли новая версия"><span class="hint" style="margin:0">как часто игроки проверяют обновления</span></div>
+    <div class="btnrow">
+      <button id="sy_save" class="primary">Сохранить настройки</button>
+      <button id="sy_test">Проверить доступ</button>
+      <button id="sy_pub">📤 Опубликовать</button>
+      <button id="sy_pubmap" title="Залить ещё раз и файлы карт — нужно после смены карты">📤 Опубликовать с картами</button>
+    </div>
+    <h3 class="sec">Состояние</h3>
+    <table class="pool">
+      <tr><td>Ревизия</td><td>${+data.meta.rev||0}${data.meta.pubAt?` · ${esc(String(data.meta.pubAt).slice(0,16).replace("T"," "))}`:""}</td></tr>
+      <tr><td>Входов настроено</td><td class="${acc?"ok":"no"}">${acc}</td></tr>
+      <tr><td>Код ГМа</td><td class="${data.meta.gmCode?"ok":"no"}">${data.meta.gmCode?"задан, вход «"+esc(data.meta.gmLogin||"gm")+"»":"не задан — ГМ не сможет войти с сайта"}</td></tr>
+      <tr><td>Карт выложено</td><td class="${mapsPub?"ok":"no"}">${mapsPub}</td></tr>
+    </table>
+    <div class="hint">Токен: github.com → Settings → Developer settings → Fine-grained tokens, доступ только к этому репозиторию, право <b>Contents: read and write</b>. «Прошёл год» публикует изменения сам.</div>`;
+}
+function syncTabBind(body,draw){
+  const g=s=>body.querySelector(s);
+  const read=()=>({owner:g("#sy_owner").value.trim(),repo:g("#sy_repo").value.trim(),
+    branch:g("#sy_branch").value.trim()||"data",token:g("#sy_token").value.trim(),poll:Math.max(30,+g("#sy_poll").value||120)});
+  if(g("#sy_save"))g("#sy_save").onclick=()=>{syncSave(read());startPolling();toast("Настройки сохранены в этом браузере");draw();};
+  if(g("#sy_test"))g("#sy_test").onclick=async()=>{
+    syncSave(read());
+    try{ const info=await gh(""); toast(`Доступ есть: ${info.full_name}${info.private?" (приватный)":""}`); }
+    catch(e){ toast("Нет доступа: "+e.message); }
+  };
+  if(g("#sy_pub"))g("#sy_pub").onclick=async()=>{syncSave(read());await publishAll({reason:"правки ГМа"});draw();};
+  if(g("#sy_pubmap"))g("#sy_pubmap").onclick=async()=>{syncSave(read());await publishAll({reason:"карты и правки",maps:true});draw();};
+}
+
+/* =============================================================
    ВХОД
    ============================================================= */
 function applyRole(){
@@ -4983,21 +5457,51 @@ function applyRole(){
 function startApp(){
   bumpBorders(); undoStack.length=0; redoStack.length=0; markClean();
   applyRole();applyView();render();setTool("select");
+  if(syncReadable())startPolling();
   const hints=Object.entries(data.meta.underlayHints||{}).map(([k,v])=>`${MODES.find(m=>m[0]===k)?.[1]}: ${v}`).join(" · ");
   toast(role.gm?"Добро пожаловать, ГМ. На все воля твоя.":"Допуск подтверждён");
   if(hints)setTimeout(()=>toast("В партии есть подложки — подключи их через «🗺 Фоны»: "+hints),2800);
 }
 function loginScreen(){
+  const online=syncReadable();
+  const last=(()=>{ try{ return localStorage.getItem("vpi.lastLogin")||""; }catch(e){ return ""; } })();
   const m=openModal("",`
     <div id="login">
       <div class="stamp"><div class="frame">
         <div class="big">ВПИ</div>
         <div class="small">Штабная карта · v${APP_VER} · допуск по коду</div>
       </div></div>
+      ${online?`<div id="lg_party" class="hint" style="text-align:center;margin:0 0 10px">проверяю связь с сайтом…</div>
+      <label>Логин</label><input id="lg_login" value="${esc(last)}" autocomplete="username" placeholder="тот, что выдал ГМ">
+      <label>Код доступа</label><input id="lg_code" type="password" autocomplete="current-password">
+      <div class="btnrow" style="margin-top:12px"><button id="lg_go" class="primary" style="flex:1;padding:11px">Войти</button></div>
+      <div class="hint" style="text-align:center;margin:14px 0 8px;color:var(--ink-dim)">или по файлу, как раньше</div>`:""}
       <button class="bigbtn" id="lg_new">Новая партия (ГМ)<small>Чистый стол: карта, государства, игроки — с нуля</small></button>
-      <button class="bigbtn" id="lg_load">Загрузить файл партии<small>Мастер-файл ГМа или персональная сборка игрока · сохранения v1.0 совместимы</small></button>
+      <button class="bigbtn" id="lg_load">Загрузить файл партии<small>Мастер-файл ГМа или персональная сборка игрока · старые сохранения совместимы</small></button>
     </div>`,[]);
   m.querySelector(".mhead").style.display="none";
+  if(online){
+    const info=m.querySelector("#lg_party");
+    fetchSite("manifest.json").then(man=>{
+      idbSet("manifest",man);
+      info.innerHTML=`партия <b style="color:var(--brass)">${esc(man.party||"ВПИ")}</b> · год ${man.year} · обновлена ${esc(String(man.updated||"").slice(0,10))}`;
+    }).catch(async()=>{
+      const man=await idbGet("manifest");
+      info.innerHTML=man?`сайт не отвечает — войдём по сохранённой копии (год ${man.year})`
+        :"партия на сайте ещё не опубликована — ГМ может начать с файла";
+    });
+    const go=async()=>{
+      const login=m.querySelector("#lg_login").value.trim(), code=m.querySelector("#lg_code").value;
+      if(!login){toast("Введи логин");return;}
+      const btn=m.querySelector("#lg_go"); btn.disabled=true; btn.textContent="Вхожу…";
+      try{ await onlineLogin(login,code); m.remove(); }
+      catch(e){ toast(e.message||"Не удалось войти"); btn.disabled=false; btn.textContent="Войти"; }
+    };
+    m.querySelector("#lg_go").onclick=go;
+    m.querySelector("#lg_code").addEventListener("keydown",e=>{ if(e.key==="Enter")go(); });
+    m.querySelector("#lg_login").addEventListener("keydown",e=>{ if(e.key==="Enter")m.querySelector("#lg_code").focus(); });
+    setTimeout(()=>m.querySelector(last?"#lg_code":"#lg_login").focus(),60);
+  }
   m.querySelector("#lg_new").onclick=()=>{
     data=newData();role={gm:true};m.remove();
     startApp();
