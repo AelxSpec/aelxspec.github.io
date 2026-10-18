@@ -5429,7 +5429,7 @@ function syncTabHtml(){
       <tr><td>Код ГМа</td><td class="${data.meta.gmCode?"ok":"no"}">${data.meta.gmCode?"задан, вход «"+esc(data.meta.gmLogin||"gm")+"»":"не задан — ГМ не сможет войти с сайта"}</td></tr>
       <tr><td>Карт выложено</td><td class="${mapsPub?"ok":"no"}">${mapsPub}</td></tr>
     </table>
-    <div class="hint">Токен: github.com → Settings → Developer settings → Fine-grained tokens, доступ только к этому репозиторию, право <b>Contents: read and write</b>. «Прошёл год» публикует изменения сам.</div>`;
+    <div class="hint">Токен: github.com → Settings → Developer settings → Personal access tokens. Если репозиторий ваш — Fine-grained с правом <b>Contents: read and write</b> только на него. Если вы соавтор чужого репозитория — <b>Tokens (classic)</b> с галочкой <b>repo</b>: тонкие токены к чужим личным репозиториям доступа не дают. «Прошёл год» публикует изменения сам.</div>`;
 }
 function syncTabBind(body,draw){
   const g=s=>body.querySelector(s);
