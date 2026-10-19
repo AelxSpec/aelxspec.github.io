@@ -3,13 +3,13 @@
  "v": 1,
  "party": "ВПИ",
  "year": 1,
- "rev": 5,
- "updated": "2026-10-19T17:23:26.527Z",
- "accounts": 2,
+ "rev": 1,
+ "updated": "2026-10-19T17:25:29.725Z",
+ "accounts": 0,
  "gm": true,
  "maps": {
   "main": {
-   "path": "maps/main_WorldMap_20260808_030104_Current.png",
+   "path": "maps/main_WorldMap_20260808_030104_Current.jpg",
    "name": "WorldMap_20260808_030104_Current.png"
   }
  }
