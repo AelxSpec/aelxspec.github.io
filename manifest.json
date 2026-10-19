@@ -1,0 +1,16 @@
+{
+ "app": "vpi-map",
+ "v": 1,
+ "party": "ВПИ",
+ "year": 1,
+ "rev": 1,
+ "updated": "2026-10-19T17:13:00.430Z",
+ "accounts": 2,
+ "gm": true,
+ "maps": {
+  "main": {
+   "path": "maps/main_WorldMap_20260808_030104_Current.png",
+   "name": "WorldMap_20260808_030104_Current.png"
+  }
+ }
+}
