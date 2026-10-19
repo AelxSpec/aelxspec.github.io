@@ -5286,20 +5286,56 @@ async function ghCommit(files,message){
 }
 
 /* ---- карты выкладываются один раз и потом живут в кэше у всех ---- */
+const MAP_LIMIT=40*1024*1024;                 /* больше в один коммит через API не проходит */
+const MAP_MAXDIM=16384;                       /* предел холста в браузере */
+const mbs=n=>(n/1048576).toFixed(1)+" МБ";
+/* тяжёлая карта пересобирается в JPEG ТЕМ ЖЕ размером в пикселях:
+   координаты провинций и войск считаются в пикселях карты и не должны сдвинуться */
+async function shrinkMap(blob){
+  let bmp=null;
+  try{ bmp=await createImageBitmap(blob); }catch(e){ return null; }
+  const W=bmp.width, H=bmp.height;
+  if(W>MAP_MAXDIM||H>MAP_MAXDIM){ bmp.close&&bmp.close(); return null; }
+  let cv=null,g=null;
+  try{
+    cv=document.createElement("canvas"); cv.width=W; cv.height=H;
+    g=cv.getContext("2d",{alpha:false});
+    if(!g)throw new Error("нет холста");
+    g.drawImage(bmp,0,0);
+  }catch(e){ bmp.close&&bmp.close(); return null; }
+  bmp.close&&bmp.close();
+  for(const q of [0.85,0.75,0.65,0.55]){
+    const out=await new Promise(r=>{ try{ cv.toBlob(r,"image/jpeg",q); }catch(e){ r(null); } });
+    if(out&&out.size<=MAP_LIMIT)return out;
+  }
+  return null;
+}
 async function mapPayload(force){
-  const out={files:[],manifest:{}};
+  const out={files:[],manifest:{},warn:[]};
   const pub=data.meta.mapsPub||(data.meta.mapsPub={});
   const grab=async (key,el,name)=>{
     if(!el||!el.src||!el.naturalWidth)return;
     const safe=(name||"map").replace(/[^\wа-яА-ЯёЁ.\-]+/g,"_");
-    const path=`maps/${key}_${safe}`;
-    out.manifest[key]={path,name:name||""};
-    if(!force&&pub[key]&&pub[key].path===path)return;        /* уже выложена — не гоняем мегабайты заново */
-    const blob=await (await fetch(el.src)).blob();
+    /* уже выложена и файл не менялся — не гоняем мегабайты заново */
+    if(!force&&pub[key]&&pub[key].src===safe&&pub[key].path){ out.manifest[key]={path:pub[key].path,name:name||""}; return; }
+    let blob=await (await fetch(el.src)).blob();
+    let path=`maps/${key}_${safe}`, note="";
+    if(blob.size>MAP_LIMIT){
+      toast(`Карта «${name}» весит ${mbs(blob.size)} — пересобираю полегче, это займёт время…`);
+      const small=await shrinkMap(blob);
+      if(!small){
+        out.warn.push(`«${name}» — ${mbs(blob.size)}, ${el.naturalWidth}×${el.naturalHeight} точек`);
+        return;                                  /* в манифест НЕ пишем: иначе игрок будет ждать несуществующий файл */
+      }
+      note=` ${mbs(blob.size)} → ${mbs(small.size)}`;
+      blob=small;
+      path=path.replace(/\.(png|jpe?g|webp|bmp|gif|tiff?)$/i,"")+".jpg";
+    }
     const buf=new Uint8Array(await blob.arrayBuffer());
-    if(buf.length>45*1024*1024){ toast(`Карта «${name}» больше 45 МБ — положи её в репозиторий вручную`); return; }
     out.files.push({path,content:b64enc(buf)});
-    pub[key]={path,size:buf.length};
+    out.manifest[key]={path,name:name||""};
+    pub[key]={path,size:buf.length,src:safe};
+    if(note)toast(`Карта «${name}» пересобрана в JPEG:${note}`);
   };
   await grab("main",img,data.meta.mapHint||"map");
   for(const [mode] of MODES){
@@ -5310,6 +5346,24 @@ async function mapPayload(force){
   return out;
 }
 
+const out_mapOk=()=>!!(data.meta.mapsPub&&data.meta.mapsPub.main&&data.meta.mapsPub.main.path);
+/* что делать, если карта не влезла даже после пересборки */
+function mapTooBigHelp(list){
+  openModal("Карта не поместилась на сайт",`
+    <div class="hint" style="margin-top:0">Файл слишком велик, чтобы положить его в репозиторий: ${esc(list.join("; "))}.
+      Предел — ${mbs(MAP_LIMIT)} на файл, и не больше ${MAP_MAXDIM} точек по стороне, иначе браузер не может её пересобрать.
+      Всё остальное опубликовано, игроки получат данные — не хватает только картинки под ними.</div>
+    <h3 class="sec">Как это чинится</h3>
+    <div class="hint" style="margin-top:0">
+      1. Открыть карту в любом редакторе (Paint, Photoshop, GIMP, онлайн-сервис вроде squoosh.app).<br>
+      2. Сохранить в <b>JPEG</b> с качеством около 80% вместо PNG. Обычно этого достаточно: PNG на 200 МБ превращается в 10–20 МБ.<br>
+      3. Если файл всё равно тяжёлый, уменьшить размер в точках так, чтобы по длинной стороне было не больше ${MAP_MAXDIM}.<br>
+      4. Подключить новый файл: «Настройки» → «Подключить основную карту», затем «Опубликовать с картами».
+    </div>
+    <div class="hint"><b>Важно:</b> после смены файла карты провинции и войска останутся на своих местах, только если размер картинки в точках не изменился.
+      Если уменьшали размер — лучше сначала сохранить партию в файл, а потом проверить, не сдвинулось ли что-нибудь.</div>`,
+    [["Понятно","primary",closeModal]]);
+}
 let publishing=false;
 async function publishAll(opt={}){
   if(!role?.gm)return;
@@ -5343,6 +5397,8 @@ async function publishAll(opt={}){
     markDirty();
     lastSeenRev=data.meta.rev;
     toast(`Опубликовано: сборок ${accounts.length}${maps.files.length?`, карт ${maps.files.length}`:""} · ${Math.round((Date.now()-t0)/1000)} с`);
+    if(maps.warn.length)mapTooBigHelp(maps.warn);
+    else if(!out_mapOk())toast("Карта на сайт ещё не выложена — нажми «Опубликовать с картами»");
   }catch(e){
     data.meta.rev=Math.max(0,(+data.meta.rev||1)-1);
     toast("Публикация не удалась: "+e.message);
@@ -5530,7 +5586,7 @@ function syncTabHtml(){
       <tr><td>Ревизия</td><td>${+data.meta.rev||0}${data.meta.pubAt?` · ${esc(String(data.meta.pubAt).slice(0,16).replace("T"," "))}`:""}</td></tr>
       <tr><td>Входов настроено</td><td class="${acc?"ok":"no"}">${acc}</td></tr>
       <tr><td>Код ГМа</td><td class="${data.meta.gmCode?"ok":"no"}">${data.meta.gmCode?"задан, вход «"+esc(data.meta.gmLogin||"gm")+"»":"не задан — ГМ не сможет войти с сайта"}</td></tr>
-      <tr><td>Карт выложено</td><td class="${mapsPub?"ok":"no"}">${mapsPub}</td></tr>
+      <tr><td>Карт выложено</td><td class="${mapsPub?"ok":"no"}">${mapsPub?Object.entries(data.meta.mapsPub).map(([k,v])=>`${k==="main"?"основная":esc(k)} — ${mbs(v.size||0)}`).join("<br>"):"нет: игроки не увидят карту"}</td></tr>
     </table>
     <div class="hint">Токен: github.com → Settings → Developer settings → Personal access tokens. Если репозиторий ваш — Fine-grained с правом <b>Contents: read and write</b> только на него. Если вы соавтор чужого репозитория — <b>Tokens (classic)</b> с галочкой <b>repo</b>: тонкие токены к чужим личным репозиториям доступа не дают. «Прошёл год» публикует изменения сам.<br>
       Кнопка «Проверить доступ» проверяет всё по шагам и показывает, что именно не работает: страница, поля, ключ, связь с GitHub, права на запись.</div>`;
