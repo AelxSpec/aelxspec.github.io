@@ -5134,18 +5134,47 @@ mini.addEventListener("wheel",e=>{e.stopPropagation();e.preventDefault();zoomBy(
    токеном, который хранится в его браузере и в партию не попадает.
    ============================================================= */
 const SYNC_KEY="vpi.sync.v1";
+/* поля чистим на входе: в них нередко вставляют ссылку целиком или строку с переносом */
+const cleanPart=v=>String(v||"").trim().replace(/^https?:\/\/(www\.)?github\.com\//i,"")
+  .replace(/\.git$/i,"").replace(/^\/+|\/+$/g,"");
+const cleanOwner=v=>cleanPart(v).split("/")[0];
+const cleanRepo=v=>{ const p=cleanPart(v).split("/"); return p[p.length-1]||""; };
+const cleanToken=v=>String(v||"").replace(/\s+/g,"").replace(/^["'«»]+|["'«»]+$/g,"");
+/* ключ ещё до запроса: пустой, с кириллицей из-за ручного набора, обрезанный */
+function tokenProblem(t){
+  if(!t)return "ключ не вписан";
+  if(/[^\x21-\x7e]/.test(t))return "в ключе посторонние символы — скопируй строку с GitHub целиком, без кавычек и пробелов";
+  if(!/^(ghp_|gho_|ghu_|ghs_|github_pat_)/.test(t))return "это не похоже на ключ GitHub: он начинается с ghp_ (classic) или github_pat_ (fine-grained)";
+  if(t.length<20)return "ключ скопирован не полностью";
+  return "";
+}
 function syncCfg(){
   let c={}; try{ c=JSON.parse(localStorage.getItem(SYNC_KEY)||"{}"); }catch(e){}
   const h=location.hostname, seg=location.pathname.split("/").filter(s=>s&&!/\.html?$/i.test(s));
   const pages=/\.github\.io$/i.test(h);
-  return {owner:c.owner||(pages?h.replace(/\.github\.io$/i,""):""),
-    repo:c.repo||(pages?(seg.length?seg[0]:h):""),
-    branch:c.branch||"data", token:c.token||"", poll:+c.poll||120};
+  return {owner:cleanOwner(c.owner)||(pages?h.replace(/\.github\.io$/i,""):""),
+    repo:cleanRepo(c.repo)||(pages?(seg.length?seg[0]:h):""),
+    branch:cleanPart(c.branch)||"data", token:cleanToken(c.token), poll:+c.poll||120};
 }
-function syncSave(p){ try{ localStorage.setItem(SYNC_KEY,JSON.stringify({...syncCfg(),...p})); }catch(e){} }
+function syncSave(p){
+  try{ localStorage.setItem(SYNC_KEY,JSON.stringify({...syncCfg(),...p})); return true; }
+  catch(e){ toast("Браузер не дал сохранить настройки: отключи режим инкогнито или запрет на хранение данных"); return false; }
+}
 const syncReadable=()=>{ const c=syncCfg(); return !!(c.owner&&c.repo); };
 const syncOn=()=>{ const c=syncCfg(); return !!(c.owner&&c.repo&&c.token); };
 const rawUrl=path=>{ const c=syncCfg(); return `https://raw.githubusercontent.com/${c.owner}/${c.repo}/${c.branch}/${path}`; };
+/* запрос с ограничением по времени: зависшее соединение не должно выглядеть «ничего не происходит» */
+async function fetchT(url,opt={},ms=25000){
+  const ac=new AbortController(), t=setTimeout(()=>ac.abort(),ms);
+  try{ return await fetch(url,{...opt,signal:ac.signal}); }
+  finally{ clearTimeout(t); }
+}
+/* «Failed to fetch» сам по себе ничего не объясняет — переводим на человеческий */
+function netMsg(e,host){
+  if(e&&e.name==="AbortError")return `${host} не ответил за 25 секунд — похоже, соединение блокируется`;
+  return `нет связи с ${host}. Так бывает от блокировщика рекламы, расширения браузера, антивируса, VPN или провайдера. `+
+    `Проверь: сайт открыт по https (а не файлом с диска), блокировщик для этого сайта выключен, попробуй другую сеть`;
+}
 
 /* ---- мелочи: base64, хеш, шифрование ---- */
 function b64enc(u8){ let s="",CH=0x8000; for(let i=0;i<u8.length;i+=CH)s+=String.fromCharCode.apply(null,u8.subarray(i,i+CH)); return btoa(s); }
@@ -5191,21 +5220,47 @@ async function idbDel(k){
 }
 
 /* ---- чтение с сайта ---- */
+let siteMirror=false;
 async function fetchSite(path,asBlob){
   if(!syncReadable())throw new Error("сайт не настроен");
-  const r=await fetch(rawUrl(path)+"?t="+Date.now(),{cache:"no-store"});
-  if(!r.ok)throw new Error("нет файла "+path+" ("+r.status+")");
-  return asBlob?r.blob():r.json();
+  const c=syncCfg();
+  /* запасной канал: если raw.githubusercontent перекрыт, читаем через зеркало jsDelivr */
+  const urls=[rawUrl(path)+"?t="+Date.now(),`https://cdn.jsdelivr.net/gh/${c.owner}/${c.repo}@${c.branch}/${path}`];
+  let last=null;
+  for(let i=0;i<urls.length;i++){
+    let r;
+    try{ r=await fetchT(urls[i],{cache:"no-store"},20000); }
+    catch(e){ last=e; continue; }
+    if(r.ok){
+      if(i&&!siteMirror){ siteMirror=true; toast("Основной канал GitHub недоступен — читаем через зеркало, данные могут отставать"); }
+      return asBlob?r.blob():r.json();
+    }
+    if(r.status===404&&!i)throw new Error("нет файла "+path+" (404)");
+    last=new Error("ответ "+r.status);
+  }
+  throw new Error(netMsg(last,"raw.githubusercontent.com"));
 }
 
 /* ---- запись: один коммит на всю публикацию ---- */
 async function gh(path,opt={}){
   const c=syncCfg();
-  const r=await fetch(`https://api.github.com/repos/${c.owner}/${c.repo}${path}`,{...opt,
-    headers:{Accept:"application/vnd.github+json",Authorization:"Bearer "+c.token,"Content-Type":"application/json",...(opt.headers||{})}});
+  if(!c.owner||!c.repo)throw new Error("не заполнены владелец и репозиторий");
+  const tp=tokenProblem(c.token); if(tp)throw new Error(tp);
+  /* Content-Type ставим только когда есть тело: лишние заголовки — лишний повод для отказа */
+  const headers={Accept:"application/vnd.github+json",Authorization:"Bearer "+c.token,...(opt.headers||{})};
+  if(opt.body)headers["Content-Type"]="application/json";
+  const url=`https://api.github.com/repos/${encodeURIComponent(c.owner)}/${encodeURIComponent(c.repo)}${path}`;
+  let r;
+  try{ r=await fetchT(url,{...opt,headers,cache:"no-store"}); }
+  catch(e){ throw new Error(netMsg(e,"api.github.com")); }
   if(!r.ok){
     const t=(await r.text()).slice(0,300);
-    throw new Error(r.status===401||r.status===403?"токен не подошёл или не хватает прав (нужно Contents: read and write)":`GitHub ${r.status}: ${t}`);
+    if(r.status===401)throw new Error("ключ не принят: он устарел, скопирован не полностью или это ключ другой учётной записи");
+    if(r.status===403)throw new Error(/rate limit/i.test(t)
+      ? "GitHub временно ограничил число запросов — подожди час и повтори"
+      : "ключу не хватает прав: у classic-ключа нужна галочка repo, у fine-grained — Contents: read and write");
+    if(r.status===404)throw new Error(`GitHub не видит репозиторий ${c.owner}/${c.repo} под этим ключом. Обычно это непринятое приглашение в соавторы, fine-grained ключ (к чужим репозиториям он доступа не даёт) или опечатка в полях`);
+    throw new Error(`GitHub ${r.status}: ${t}`);
   }
   return r.status===204?null:r.json();
 }
@@ -5340,7 +5395,9 @@ async function onlineLogin(login,code){
   try{ box=await fetchSite(path); }
   catch(e){
     box=await idbGet("bundle:"+path);
-    if(!box)throw new Error("Логин не найден на сайте. Проверь логин или подключение");
+    if(!box)throw new Error(/нет файла/.test(e.message)
+      ? "Такого логина на сайте нет: проверь написание логина, а если он верный — попроси ГМа нажать «Опубликовать»"
+      : "Не удалось получить данные: "+e.message);
     offline=true;
   }
   let d;
@@ -5406,6 +5463,52 @@ $("#btnSync").addEventListener("click",()=>{
   else checkUpdates(true);
 });
 
+/* ---- проверка связи: по шагам, чтобы было видно, что именно не работает ---- */
+async function syncDiagnose(){
+  const c=syncCfg(), L=[];
+  const add=(ok,t)=>L.push(`<div class="rq ${ok?"ok":"no"}" style="display:block;margin-bottom:5px;white-space:normal;line-height:1.5">${ok?"✔":"✕"} ${t}</div>`);
+  const m0=openModal("Проверка связи",'<div class="hint" style="margin-top:0">Проверяю…</div>',[["Закрыть","primary",closeModal]]);
+  const body=m0.querySelector(".mbody");
+  const show=extra=>{ body.innerHTML=L.join("")+(extra||""); };
+
+  const file=location.protocol==="file:";
+  add(!file,file?"страница открыта файлом с диска — в таком виде браузер запрещает обращаться к GitHub. Открой сайт по адресу https://…github.io"
+    :`страница открыта по ${location.protocol}//${location.host||"—"}`);
+  add(!!(c.owner&&c.repo),c.owner&&c.repo?`репозиторий: ${esc(c.owner)}/${esc(c.repo)}, ветка ${esc(c.branch)}`:"не заполнены владелец и репозиторий");
+  const tp=tokenProblem(c.token);
+  add(!tp,tp||`ключ на вид правильный (${esc(c.token.slice(0,7))}…, ${c.token.length} знаков)`);
+  show();
+
+  let apiOk=false;
+  try{
+    const r=await fetchT("https://api.github.com/rate_limit",{cache:"no-store"},15000);
+    apiOk=r.status<500;
+    add(apiOk,`связь с api.github.com есть (ответ ${r.status})`);
+  }catch(e){ add(false,"api.github.com недоступен — "+netMsg(e,"api.github.com")); }
+  show();
+
+  try{
+    const r=await fetchT(`https://raw.githubusercontent.com/${c.owner}/${c.repo}/HEAD/README.md?t=`+Date.now(),{cache:"no-store"},15000);
+    add(r.status<500,`связь с raw.githubusercontent.com есть (ответ ${r.status})`);
+  }catch(e){ add(false,"raw.githubusercontent.com недоступен — игроки не смогут получать данные с сайта"); }
+  show();
+
+  if(apiOk&&!tp){
+    try{
+      const info=await gh("");
+      add(true,`доступ к репозиторию подтверждён: ${esc(info.full_name)}${info.private?" (приватный)":""}`);
+      const perm=info.permissions||{};
+      add(!!(perm.push||perm.admin),perm.push||perm.admin?"право на запись есть — можно публиковать":"права только на чтение: попроси владельца добавить тебя в соавторы (Settings → Collaborators)");
+    }catch(e){ add(false,"доступ не подтверждён: "+e.message); }
+  }
+  const bad=L.filter(x=>x.includes('class="rq no"')).length;
+  show(`<div class="hint" style="margin-top:10px">${bad?
+    "Что делать: 1) принять приглашение на github.com/"+esc(c.owner)+"/"+esc(c.repo)+"/invitations; "+
+    "2) сделать classic-ключ с галочкой repo и вставить его целиком; "+
+    "3) если не проходит связь — выключить блокировщик для этого сайта, закрыть VPN или попробовать другую сеть, например раздачу с телефона."
+    :"Всё в порядке: можно публиковать."}</div>`);
+}
+
 /* ---- вкладка «Сайт» в кабинете ---- */
 function syncTabHtml(){
   const c=syncCfg(), acc=data.players.filter(p=>p.login&&p.code).length;
@@ -5429,18 +5532,15 @@ function syncTabHtml(){
       <tr><td>Код ГМа</td><td class="${data.meta.gmCode?"ok":"no"}">${data.meta.gmCode?"задан, вход «"+esc(data.meta.gmLogin||"gm")+"»":"не задан — ГМ не сможет войти с сайта"}</td></tr>
       <tr><td>Карт выложено</td><td class="${mapsPub?"ok":"no"}">${mapsPub}</td></tr>
     </table>
-    <div class="hint">Токен: github.com → Settings → Developer settings → Personal access tokens. Если репозиторий ваш — Fine-grained с правом <b>Contents: read and write</b> только на него. Если вы соавтор чужого репозитория — <b>Tokens (classic)</b> с галочкой <b>repo</b>: тонкие токены к чужим личным репозиториям доступа не дают. «Прошёл год» публикует изменения сам.</div>`;
+    <div class="hint">Токен: github.com → Settings → Developer settings → Personal access tokens. Если репозиторий ваш — Fine-grained с правом <b>Contents: read and write</b> только на него. Если вы соавтор чужого репозитория — <b>Tokens (classic)</b> с галочкой <b>repo</b>: тонкие токены к чужим личным репозиториям доступа не дают. «Прошёл год» публикует изменения сам.<br>
+      Кнопка «Проверить доступ» проверяет всё по шагам и показывает, что именно не работает: страница, поля, ключ, связь с GitHub, права на запись.</div>`;
 }
 function syncTabBind(body,draw){
   const g=s=>body.querySelector(s);
   const read=()=>({owner:g("#sy_owner").value.trim(),repo:g("#sy_repo").value.trim(),
     branch:g("#sy_branch").value.trim()||"data",token:g("#sy_token").value.trim(),poll:Math.max(30,+g("#sy_poll").value||120)});
   if(g("#sy_save"))g("#sy_save").onclick=()=>{syncSave(read());startPolling();toast("Настройки сохранены в этом браузере");draw();};
-  if(g("#sy_test"))g("#sy_test").onclick=async()=>{
-    syncSave(read());
-    try{ const info=await gh(""); toast(`Доступ есть: ${info.full_name}${info.private?" (приватный)":""}`); }
-    catch(e){ toast("Нет доступа: "+e.message); }
-  };
+  if(g("#sy_test"))g("#sy_test").onclick=async()=>{ syncSave(read()); syncDiagnose(); };
   if(g("#sy_pub"))g("#sy_pub").onclick=async()=>{syncSave(read());await publishAll({reason:"правки ГМа"});draw();};
   if(g("#sy_pubmap"))g("#sy_pubmap").onclick=async()=>{syncSave(read());await publishAll({reason:"карты и правки",maps:true});draw();};
 }
